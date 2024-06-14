@@ -29,4 +29,3 @@ def generate():
 # Start the API server
 if __name__ == '__main__':
     app.run()
-  

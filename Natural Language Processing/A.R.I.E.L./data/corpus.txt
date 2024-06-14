@@ -1,0 +1,4 @@
+"Python is a popular programming language.",
+"Machine learning is a subfield of artificial intelligence.",
+"Python has a rich ecosystem of libraries and frameworks.",
+"Deep learning is a subset of machine learning."
