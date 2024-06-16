@@ -9,10 +9,10 @@ The goal of this project is to enhance the reliability and accuracy of the Autop
 To install the Lane-Keeping and Obstacle-Avoidance System, follow these steps:
 
 1. Clone the project repository from GitHub:
-git clone https://github.com/Carson-We/Lane-Keeping_and_Obstacle-Avoidance_System.git
+`git clone https://github.com/Carson-We/Machine-Learning.git`
 
 2. Install the necessary dependencies by running the following command:
-   pip install -r requirements.txt
+   `pip install -r requirements.txt`
 
 3. Set up the required hardware components and configure the environment as specified in the project documentation.
 
@@ -39,7 +39,7 @@ To use the enhanced Autopilot system, follow these instructions:
 
 To access our trained dataset, you can easily download it from our GitHub repository. Please visit the following link to download the dataset:
 
-- [Dataset Download](https://github.com/Carson-We/Lane-Keeping_and_Obstacle-Avoidance_System\dataset)
+- [Dataset Download](https://github.com/Carson-We/Machine-Learning.git\dataset)
 
 The dataset contains labeled samples for training and evaluating the Lane-Keeping and Obstacle-Avoidance System.
 
@@ -73,7 +73,7 @@ Authors: Carson and Mr. Jonathan Tse
 For any inquiries or feedback regarding the project, feel free to contact us:
 
 - Carson
-  - Email: carson.developer1125@gmail.com
+  - Email: [carson.developer1125@gmail.com](mailto:carson.developer1125@gmail.com)
 
 - Mr. Jonathan Tse
   - Email: 
