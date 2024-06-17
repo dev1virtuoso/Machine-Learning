@@ -1,3 +1,5 @@
+# Copyright © 2024 Carson. All rights reserved.
+
 from transformers import GPT2LMHeadModel, GPT2Tokenizer, TextDataset, DataCollatorForLanguageModeling, Trainer, TrainingArguments
 
 # Load the pre-trained GPT-2 model and tokenizer
@@ -6,7 +8,7 @@ model = GPT2LMHeadModel.from_pretrained(model_name)
 tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 
 # Prepare the training data
-train_file = '/Users/tszsanwu/Developer/Code/H.A.R.P.E.R./Data/user_style_dataset.txt'  # path to the text dataset with user-specific styles
+train_file = '/path/to/directory' 
 train_dataset = TextDataset(tokenizer=tokenizer, file_path=train_file, block_size=128)
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
