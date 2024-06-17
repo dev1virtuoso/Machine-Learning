@@ -1,16 +1,16 @@
 from transformers import GPT2LMHeadModel, GPT2Tokenizer, TextDataset, DataCollatorForLanguageModeling, Trainer, TrainingArguments
 
-# 加载预训练的GPT-2模型和分词器
-model_name = 'gpt2'  # 或者其他合适的预训练模型
+# Load the pre-trained GPT-2 model and tokenizer
+model_name = 'gpt2'  # or any other suitable pre-trained model
 model = GPT2LMHeadModel.from_pretrained(model_name)
 tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 
-# 准备训练数据
-train_file = '/Users/tszsanwu/Developer/Code/H.A.R.P.E.R./Data/user_style_dataset.txt'  # 用户独特风格的文本数据集
+# Prepare the training data
+train_file = '/Users/tszsanwu/Developer/Code/H.A.R.P.E.R./Data/user_style_dataset.txt'  # path to the text dataset with user-specific styles
 train_dataset = TextDataset(tokenizer=tokenizer, file_path=train_file, block_size=128)
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
-# 定义训练参数
+# Define the training arguments
 training_args = TrainingArguments(
     output_dir='./output',
     overwrite_output_dir=True,
@@ -20,7 +20,7 @@ training_args = TrainingArguments(
     save_total_limit=2,
 )
 
-# 创建Trainer对象并进行训练
+# Create a Trainer object and start training
 trainer = Trainer(
     model=model,
     args=training_args,
