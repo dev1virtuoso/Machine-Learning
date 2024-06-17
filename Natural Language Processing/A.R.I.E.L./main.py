@@ -1,3 +1,5 @@
+# Copyright © 2024 Carson. All rights reserved.
+
 import random
 from flask import Flask, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
