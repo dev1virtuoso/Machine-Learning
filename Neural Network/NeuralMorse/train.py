@@ -1,3 +1,5 @@
+# Copyright © 2024 Carson. All rights reserved.
+
 import numpy as np
 from keras.models import Sequential, Model
 from keras.layers import LSTM, Dense, Input
