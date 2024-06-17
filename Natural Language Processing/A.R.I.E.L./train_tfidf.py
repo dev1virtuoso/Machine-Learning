@@ -1,3 +1,5 @@
+# Copyright © 2024 Carson. All rights reserved.
+
 import os
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pickle
