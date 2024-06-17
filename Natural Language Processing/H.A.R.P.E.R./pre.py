@@ -1,3 +1,5 @@
+# Copyright © 2024 Carson. All rights reserved.
+
 import re
 import nltk
 from nltk.tokenize import word_tokenize
@@ -31,7 +33,7 @@ def preprocess_text_file(file_path):
     return preprocessed_text
 
 # Specify the file path
-file_path = '/Users/tszsanwu/Developer/Code/H.A.R.P.E.R./Data/user_style_dataset.txt'
+file_path = '/path/to/directory'
 
 # Preprocess the text file
 preprocessed_text = preprocess_text_file(file_path)
@@ -44,7 +46,7 @@ def write_preprocessed_text(file_path, preprocessed_text):
         file.write(preprocessed_text)
 
 # Specify the file path to write the preprocessed text
-output_file_path = '/Users/tszsanwu/Developer/Code/H.A.R.P.E.R./Data/user_style_dataset.txt'
+output_file_path = '/path/to/directory'
 
 # Write the preprocessed text to the file
 write_preprocessed_text(output_file_path, preprocessed_text)
