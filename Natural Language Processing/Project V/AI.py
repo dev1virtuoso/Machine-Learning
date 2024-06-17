@@ -1,4 +1,5 @@
-# Import required libraries and packages
+# Copyright © 2024 Carson. All rights reserved.
+
 import azure.cognitiveservices.speech as speechsdk
 from azure.ai.language.understanding import IntentRecognizer, LanguageUnderstandingClient
 from msrest.authentication import CognitiveServicesCredentials
