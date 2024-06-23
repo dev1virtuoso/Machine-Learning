@@ -1,3 +1,5 @@
+# Copyright © 2024 Carson. All rights reserved.
+
 import torch
 from pytorch_transformers import GPT2Tokenizer, GPT2LMHeadModel
 
