@@ -41,8 +41,6 @@ NeuralMorse is licensed under the Mozilla Public License (MPL) version 2.0.
 
 The MPL is a copyleft license that allows you to use, modify, and distribute the software, as long as any modifications or derivative works you create are also licensed under the MPL. It provides a balance between the freedoms of open-source software and the protection of intellectual property rights.
 
-For more details, please refer to the [LICENSE](LICENSE) file.
-
 ## Acknowledgements
 
 We would like to express our gratitude to the open-source community for providing valuable resources and inspiration for the development of NeuralMorse.
