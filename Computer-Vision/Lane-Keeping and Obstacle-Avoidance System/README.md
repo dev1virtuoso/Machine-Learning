@@ -35,14 +35,6 @@ To use the enhanced Autopilot system, follow these instructions:
 
 5. Monitor the vehicle's behavior and performance while the Autopilot is engaged. Ensure that the algorithm operates reliably and accurately.
 
-# Datasets
-
-To access our trained dataset, you can easily download it from our GitHub repository. Please visit the following link to download the dataset:
-
-- [Dataset Download](https://github.com/Carson-We/Machine-Learning.git\dataset)
-
-The dataset contains labeled samples for training and evaluating the Lane-Keeping and Obstacle-Avoidance System.
-
 # Demo
 
 We have included a comprehensive demo in the `demo/` directory to showcase the enhanced capabilities of the Autopilot system. To run the demo, follow these steps:
