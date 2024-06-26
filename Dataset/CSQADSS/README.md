@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> This project is considered deprecated and abandoned. It may not be actively maintained or updated. Please use it with caution and consider alternative solutions for your needs.
+
 # Cantonese Spoken Question-Answer Dataset for Secondary School (CSQADSS)
 
 CSQADSS is designed for training and improving Cantonese language understanding and proficiency.
@@ -5,8 +8,6 @@ CSQADSS is designed for training and improving Cantonese language understanding 
 ## License
 
 The code in this repository is released under the [Mozilla Public License Version 2.0](https://www.mozilla.org/en-US/MPL/2.0/), an open-source license that governs the usage, modification, and distribution of the code. The license provides rights and responsibilities for users and contributors, ensuring the project remains accessible and transparent.
-
-For a detailed understanding of the terms and conditions of the Mozilla Public License Version 2.0, please refer to the [LICENSE](LICENSE) file in this repository.
 
 ## Contribution Guidelines
 
