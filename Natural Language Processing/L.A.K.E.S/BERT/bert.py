@@ -1,5 +1,3 @@
-# Copyright © 2024 Carson. All rights reserved.
-
 import torch
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForMaskedLM, AdamW

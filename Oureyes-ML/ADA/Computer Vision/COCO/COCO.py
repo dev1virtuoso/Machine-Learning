@@ -1,5 +1,3 @@
-# Copyright © 2024 Carson. All rights reserved.
-
 import os
 
 from shutil import copyfile

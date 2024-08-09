@@ -1,5 +1,3 @@
-# Copyright © 2024 Carson. All rights reserved.
-
 import tensorflow as tf
 import numpy as np
 from tensorflow import keras

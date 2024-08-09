@@ -1,5 +1,3 @@
-# Copyright © 2024 Carson. All rights reserved.
-
 from transformers import GPT2LMHeadModel, GPT2Tokenizer, TextDataset, DataCollatorForLanguageModeling, Trainer, TrainingArguments
 
 # Load the pre-trained GPT-2 model and tokenizer

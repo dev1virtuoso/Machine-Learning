@@ -1,5 +1,3 @@
-# Copyright © 2024 Carson. All rights reserved.
-
 import numpy as np
 from tensorflow.keras.models import load_model
 from tensorflow.keras.models import Model

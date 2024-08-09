@@ -1,5 +1,3 @@
-# Copyright © 2024 Carson. All rights reserved.
-
 import torch
 import torch.nn as nn
 import torch.optim as optim

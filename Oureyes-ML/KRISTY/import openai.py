@@ -1,5 +1,3 @@
-# Copyright © 2024 Carson. All rights reserved.
-
 import openai
 
 openai.api_key = "YOUR_OPENAI_API_KEY"

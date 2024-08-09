@@ -1,5 +1,3 @@
-# Copyright © 2024 Carson. All rights reserved.
-
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential

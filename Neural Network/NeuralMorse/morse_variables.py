@@ -1,5 +1,3 @@
-# Copyright © 2024 Carson. All rights reserved.
-
 input_vocab = sorted(set(''.join(input_messages) + '0123456789'))
 target_vocab = sorted(set(' '.join(target_messages).split()))
 

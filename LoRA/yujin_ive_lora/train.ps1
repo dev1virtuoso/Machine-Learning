@@ -1,5 +1,3 @@
-# Copyright © 2024 Carson. All rights reserved.
-
 # Train data path 
 $pretrained_model="/path/to/directorychilloutmix_NiPrunedFp32Fix.safetensors" # base model path 
 $train_data_dir="/path/to/directory"
