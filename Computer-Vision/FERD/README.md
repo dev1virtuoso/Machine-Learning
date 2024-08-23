@@ -1,4 +1,4 @@
-### `FacialExpressionClassifier.py` - Facial Expression Classifier
+# `FacialExpressionClassifier.py` - Facial Expression Classifier
 
 This Python script, `FacialExpressionClassifier.py`, demonstrates Facial Expression Classifier using a logistic regression model.
 

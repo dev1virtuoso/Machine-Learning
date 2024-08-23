@@ -21,4 +21,3 @@ By contributing to this project, you agree to license your contributions under t
 If you have any questions or suggestions regarding this computer vision project, please feel free to contact me at [carson.developer1125@gmail.com](mailto:carson.developer1125@gmail.com).
 
 Thank you for your interest and contributions to the project!
-

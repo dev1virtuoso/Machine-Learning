@@ -14,12 +14,12 @@ NeuralMorse is a project that utilizes neural networks to translate text to Mors
 1. Clone the NeuralMorse repository to your local machine.
 2. Install the required dependencies and libraries.
 `pip install numpy keras tensorflow`
-4. Run the NeuralMorse application.
+3. Run the NeuralMorse application.
 `python test.py`
-6. Choose the desired conversion mode: text to Morse code or Morse code to text.
-7. Enter the input text or Morse code message.
-8. Click the "Convert" button to obtain the translation result.
-9. The translated output will be displayed on the screen.
+4. Choose the desired conversion mode: text to Morse code or Morse code to text.
+5. Enter the input text or Morse code message.
+6. Click the "Convert" button to obtain the translation result.
+7. The translated output will be displayed on the screen.
 
 ## Dependencies
 

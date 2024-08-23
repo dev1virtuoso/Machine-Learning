@@ -16,7 +16,6 @@ The machine learning project focuses on developing intelligent algorithms and mo
 
 This repository utilizes the MonoRepo approach, which involves integrating multiple related projects or modules into a single repository. This approach facilitates code sharing and simplifies the management of project configurations and module dependencies. By adopting the MonoRepo approach, it becomes easier to share code across repositories and manage module dependencies effectively. Additionally, it improves project management efficiency and streamlines the project structure.
 
-
 ## Getting Started
 
 To begin working with the machine learning project, follow these steps:

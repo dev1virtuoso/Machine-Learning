@@ -1,4 +1,4 @@
-### `FruitClassifier.py` - Fruit Classifier
+# `FruitClassifier.py` - Fruit Classifier
 
 This Python script, `FruitClassifier.py`, demonstrates Fruit Classifier using a logistic regression model.
 

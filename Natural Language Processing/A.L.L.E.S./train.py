@@ -9,7 +9,7 @@ input_sequences = np.loadtxt(input_file, delimiter=',', dtype=int, ndmin=2)
 
 target_sequences = np.loadtxt(target_file, delimiter=',', dtype=int, ndmin=2)
 
-# 转换为 TensorFlow Dataset 对象
+# Convert the dataset to a TensorFlow Dataset object
 dataset = tf.data.Dataset.from_tensor_slices((input_sequences, target_sequences))
 
 batch_size = 64

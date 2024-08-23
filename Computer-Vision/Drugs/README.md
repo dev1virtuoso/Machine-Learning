@@ -1,4 +1,4 @@
-### `drug.py` - Drug Classification
+# `drug.py` - Drug Classification
 
 This Python script, `drug.py`, demonstrates drug classification using a logistic regression model.
 

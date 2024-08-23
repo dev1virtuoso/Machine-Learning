@@ -1,4 +1,4 @@
-### `ImageClassifier.py` - Image Classifier
+# `ImageClassifier.py` - Image Classifier
 
 This Python script, `ImageClassifier.py`, demonstrates Image Classifier using a logistic regression model.
 

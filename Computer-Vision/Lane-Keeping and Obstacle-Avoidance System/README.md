@@ -1,10 +1,10 @@
 # Lane-Keeping and Obstacle-Avoidance System
 
-# Project Goals
+## Project Goals
 
 The goal of this project is to enhance the reliability and accuracy of the Autopilot system, specifically focusing on the lane-keeping and obstacle-avoidance capabilities. Our aim is to improve the performance of the Autopilot system, making it more robust and precise in navigating through lanes and avoiding obstacles.
 
-# Installation Guide
+## Installation Guide
 
 To install the Lane-Keeping and Obstacle-Avoidance System, follow these steps:
 
@@ -16,7 +16,7 @@ To install the Lane-Keeping and Obstacle-Avoidance System, follow these steps:
 
 3. Set up the required hardware components and configure the environment as specified in the project documentation.
 
-# Usage Instructions
+## Usage Instructions
 
 To use the enhanced Autopilot system, follow these instructions:
 
@@ -29,13 +29,11 @@ To use the enhanced Autopilot system, follow these instructions:
 3. Connect the vehicle's sensors and controllers to the Autopilot system.
 
 4. Call the Autopilot's control function to activate the automated navigation:
-   autopilot.control()
- 
-   This function will continuously monitor sensor inputs, process the data, and generate control commands for maintaining lane position and avoiding obstacles.
+   autopilot.control() This function will continuously monitor sensor inputs, process the data, and generate control commands for maintaining lane position and avoiding obstacles.
 
 5. Monitor the vehicle's behavior and performance while the Autopilot is engaged. Ensure that the algorithm operates reliably and accurately.
 
-# Demo
+## Demo
 
 We have included a comprehensive demo in the `demo/` directory to showcase the enhanced capabilities of the Autopilot system. To run the demo, follow these steps:
 
@@ -44,11 +42,9 @@ We have included a comprehensive demo in the `demo/` directory to showcase the e
 
 2. Execute the demo script:
    python autopilot_demo.py
-
-
    The demo script will simulate real-world scenarios, demonstrating the improved reliability and accuracy of the Autopilot system in lane-keeping and obstacle-avoidance tasks.
 
-# Contribution Guidelines
+## Contribution Guidelines
 
 We welcome contributions to the Lane-Keeping and Obstacle-Avoidance System project. If you would like to contribute, please adhere to the following guidelines:
 
@@ -58,7 +54,7 @@ We welcome contributions to the Lane-Keeping and Obstacle-Avoidance System proje
 4. Push your changes to your forked repository.
 5. Submit a pull request, providing a clear explanation of your contribution and its purpose.
 
-# Author and Contact Information
+## Author and Contact Information
 
 Authors: Carson and Mr. Jonathan Tse
 
@@ -68,6 +64,6 @@ For any inquiries or feedback regarding the project, feel free to contact us:
   - Email: [carson.developer1125@gmail.com](mailto:carson.developer1125@gmail.com)
 
 - Mr. Jonathan Tse
-  - Email: 
+  - Email:
 
 We appreciate your interest and support in enhancing the Autopilot system to achieve greater reliability and accuracy in lane-keeping and obstacle-avoidance tasks.
