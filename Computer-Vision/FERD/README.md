@@ -4,7 +4,7 @@ This Python script, `FacialExpressionClassifier.py`, demonstrates Facial Express
 
 ## License
 
-The code in this repository is released under the [Mozilla Public License Version 2.0](https://www.mozilla.org/en-US/MPL/2.0/), an open-source license that governs the usage, modification, and distribution of the code. The license provides rights and responsibilities for users and contributors, ensuring the project remains accessible and transparent.
+This repository is licensed under the Carson Open Source License, which provides users and contributors with the freedom to copy, modify, distribute, and sublicense the software under certain conditions. The project is governed by the Mozilla Public License Version 2.0 in addition to the terms outlined in this license.
 
 ## Contribution Guidelines
 
