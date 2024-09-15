@@ -4,7 +4,7 @@ This Python script, `drug.py`, demonstrates drug classification using a logistic
 
 ## License
 
-This repository is licensed under the Carson Open Source License, which provides users and contributors with the freedom to copy, modify, distribute, and sublicense the software under certain conditions. The project is governed by the Mozilla Public License Version 2.0 in addition to the terms outlined in this license.
+This repository is licensed under the Carson Open Source License, which provides users and contributors with the freedom to copy, modify, distribute, and sublicense the software under certain conditions. The project is governed by the The Carson Open Source License (CEOSL) Version 2.0 in addition to the terms outlined in this license.
 
 ## Contribution Guidelines
 
@@ -14,7 +14,7 @@ Contributions to this computer vision project are highly appreciated. If you wis
 - Make your changes and thoroughly test them.
 - Submit a pull request describing the modifications and the rationale behind them.
 
-By contributing to this project, you agree to license your contributions under the terms of the Mozilla Public License Version 2.0.
+By contributing to this project, you agree to license your contributions under the terms of the The Carson Open Source License (CEOSL) Version 2.0.
 
 ## Contact Information
 
