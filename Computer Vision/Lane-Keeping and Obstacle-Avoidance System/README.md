@@ -61,7 +61,7 @@ Authors: Carson and Mr. Jonathan Tse
 For any inquiries or feedback regarding the project, feel free to contact us:
 
 - Carson
-  - Email: [carson.developer1125@gmail.com](mailto:carson.developer1125@gmail.com)
+  - Email: [following methods](https://carson-we.github.io/contact.html)
 
 - Mr. Jonathan Tse
   - Email:

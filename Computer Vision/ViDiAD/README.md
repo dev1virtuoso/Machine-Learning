@@ -73,7 +73,7 @@ If you have any inquiries or feedback regarding the project, we are here to assi
 Contact Information:
 
 - Carson
-  - Email: [carson.developer1125@gmail.com](mailto:carson.developer1125@gmail.com)
+  - Email: [following methods](https://carson-we.github.io/contact.html)
 
 - Mr. Jonathan Tse
   - Email:
