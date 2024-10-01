@@ -73,7 +73,7 @@ If you have any inquiries or feedback regarding the project, we are here to assi
 Contact Information:
 
 - Carson
-  - Email: [following methods](https://carson-we.github.io/contact.html)
+  - Email: [following methods](https://carson-we.github.io/Carson-We.github.io/contact.html)
 
 - Mr. Jonathan Tse
   - Email:
