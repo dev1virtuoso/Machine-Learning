@@ -7,7 +7,7 @@ CSQADSS is designed for training and improving Cantonese language understanding 
 
 ## License
 
-This repository is licensed under the Carson Open Source License, which provides users and contributors with the freedom to copy, modify, distribute, and sublicense the software under certain conditions. The project is governed by MIT License in addition to the terms outlined in this license.
+This repository is licensed under the MIT License, which provides users and contributors with the freedom to copy, modify, distribute, and sublicense the software under certain conditions. The project is governed by MIT License in addition to the terms outlined in this license.
 
 ## Contribution Guidelines
 
