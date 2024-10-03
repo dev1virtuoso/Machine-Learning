@@ -36,7 +36,7 @@ To begin working with the machine learning project, follow these steps:
 1. Clone the repository to your local machine:
 
    `
-   git clone https://github.com/Carson-We/Machine-Learning.git
+   git clone https://github.com/dev1virtuoso/Machine-Learning.git
    `
 
 2. Install any necessary dependencies as outlined in the project's documentation.

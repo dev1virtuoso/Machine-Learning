@@ -9,7 +9,7 @@ The goal of this project is to enhance the reliability and accuracy of the Autop
 To install the Lane-Keeping and Obstacle-Avoidance System, follow these steps:
 
 1. Clone the project repository from GitHub:
-`git clone https://github.com/Carson-We/Machine-Learning.git`
+`git clone https://github.com/dev1virtuoso/Machine-Learning.git`
 
 2. Install the necessary dependencies by running the following command:
    `pip install -r requirements.txt`

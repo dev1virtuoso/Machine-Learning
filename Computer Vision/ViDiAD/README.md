@@ -22,7 +22,7 @@ ViDiAD: /ˈvaɪ.diː.æd/
 To get started with the Vision-based Distance and Object Analysis project, follow these steps:
 
 Clone the repository:
-`git clone https://github.com/Carson-We/ViDiAD.git`
+`git clone https://github.com/dev1virtuoso/ViDiAD.git`
 
 Install the required dependencies and libraries as specified in the installation instructions.
 Explore the provided code examples and documentation to understand the implementation details and usage guidelines.
