@@ -61,7 +61,7 @@ Authors: Carson and Mr. Jonathan Tse
 For any inquiries or feedback regarding the project, feel free to contact us:
 
 - Carson
-  - Email: [following methods](https://carson-we.github.io/Carson-We.github.io/contact.html)
+  - Email: [following methods](https://dev1virtuoso.github.io/dev1virtuoso.github.io/contact.html)
 
 - Mr. Jonathan Tse
   - Email:
