@@ -73,7 +73,7 @@ If you have any inquiries or feedback regarding the project, we are here to assi
 Contact Information:
 
 - Carson
-  - Email: [following methods](https://dev1virtuoso.github.io/dev1virtuoso.github.io/contact.html)
+  - Email: [following methods](https://github.com/dev1virtuoso/Documentation/blob/main/dev1virtuoso/Attachment/dev1virtuoso/carson-wu.md)
 
 - Mr. Jonathan Tse
   - Email:
