@@ -1,4 +1,4 @@
-# Copyright © 2024 Carson. All rights reserved.
+# Copyright (c) 2024 Carson. All rights reserved.
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 
