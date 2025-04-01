@@ -3,6 +3,7 @@ import mediapipe as mp
 import numpy as np
 import time
 import json
+import open3d as o3d
 
 # Initialize MediaPipe utilities
 mp_drawing = mp.solutions.drawing_utils
@@ -14,15 +15,18 @@ frame_duration = 1.0 / target_fps  # Duration per frame (seconds)
 processed_data = []  # To store all frames with valid landmark data
 
 # Define body and hand landmarks for mapping
-pose_tubuh = ['NOSE', 'LEFT_EYE_INNER', 'LEFT_EYE', 'LEFT_EYE_OUTER', 'RIGHT_EYE_INNER', 'RIGHT_EYE', 'RIGHT_EYE_OUTER', 'LEFT_EAR', 'RIGHT_EAR', 'MOUTH_LEFT', 'MOUTH_RIGHT',
-              'LEFT_SHOULDER', 'RIGHT_SHOULDER', 'LEFT_ELBOW', 'RIGHT_ELBOW', 'LEFT_WRIST', 'RIGHT_WRIST', 'LEFT_PINKY', 'RIGHT_PINKY', 'LEFT_INDEX', 'RIGHT_INDEX', 'LEFT_THUMB',
-              'RIGHT_THUMB', 'LEFT_HIP', 'RIGHT_HIP', 'LEFT_KNEE', 'RIGHT_KNEE', 'LEFT_ANKLE', 'RIGHT_ANKLE', 'LEFT_HEEL', 'RIGHT_HEEL', 'LEFT_FOOT_INDEX', 'RIGHT_FOOT_INDEX']
+pose_tubuh = ['NOSE', 'LEFT_EYE_INNER', 'LEFT_EYE', 'LEFT_EYE_OUTER', 'RIGHT_EYE_INNER', 'RIGHT_EYE', 'RIGHT_EYE_OUTER',
+              'LEFT_EAR', 'RIGHT_EAR', 'MOUTH_LEFT', 'MOUTH_RIGHT', 'LEFT_SHOULDER', 'RIGHT_SHOULDER', 'LEFT_ELBOW',
+              'RIGHT_ELBOW', 'LEFT_WRIST', 'RIGHT_WRIST', 'LEFT_PINKY', 'RIGHT_PINKY', 'LEFT_INDEX', 'RIGHT_INDEX',
+              'LEFT_THUMB', 'RIGHT_THUMB', 'LEFT_HIP', 'RIGHT_HIP', 'LEFT_KNEE', 'RIGHT_KNEE', 'LEFT_ANKLE',
+              'RIGHT_ANKLE', 'LEFT_HEEL', 'RIGHT_HEEL', 'LEFT_FOOT_INDEX', 'RIGHT_FOOT_INDEX']
 
-pose_tangan = ['WRIST', 'THUMB_CPC', 'THUMB_MCP', 'THUMB_IP', 'THUMB_TIP', 'INDEX_FINGER_MCP', 'INDEX_FINGER_PIP', 'INDEX_FINGER_DIP', 'INDEX_FINGER_TIP', 'MIDDLE_FINGER_MCP',
-               'MIDDLE_FINGER_PIP', 'MIDDLE_FINGER_DIP', 'MIDDLE_FINGER_TIP', 'RING_FINGER_PIP', 'RING_FINGER_DIP', 'RING_FINGER_TIP',
-               'RING_FINGER_MCP', 'PINKY_MCP', 'PINKY_PIP', 'PINKY_DIP', 'PINKY_TIP']
+pose_tangan = ['WRIST', 'THUMB_CMC', 'THUMB_MCP', 'THUMB_IP', 'THUMB_TIP', 'INDEX_FINGER_MCP', 'INDEX_FINGER_PIP',
+               'INDEX_FINGER_DIP', 'INDEX_FINGER_TIP', 'MIDDLE_FINGER_MCP', 'MIDDLE_FINGER_PIP', 'MIDDLE_FINGER_DIP',
+               'MIDDLE_FINGER_TIP', 'RING_FINGER_MCP', 'RING_FINGER_PIP', 'RING_FINGER_DIP', 'RING_FINGER_TIP',
+               'PINKY_MCP', 'PINKY_PIP', 'PINKY_DIP', 'PINKY_TIP']
 
-pose_tangan_2 = [name + '2' for name in pose_tangan]  # Dynamic naming for left hand landmarks
+pose_tangan_2 = [name + '2' for name in pose_tangan]
 
 # Get video path from user
 video_path = input("Enter the MP4 file path: ")
@@ -41,7 +45,7 @@ def extract_landmarks(results, image_shape, frame_count):
     # Pose landmarks
     if results.pose_landmarks:
         frame_data["landmarks"]["pose"] = {
-            pose_tubuh[i]: (lm.x * image_shape[1], lm.y * image_shape[0])
+            pose_tubuh[i]: (lm.x * image_shape[1], lm.y * image_shape[0], lm.z)
             for i, lm in enumerate(results.pose_landmarks.landmark)
         }
         has_landmarks = True
@@ -49,7 +53,7 @@ def extract_landmarks(results, image_shape, frame_count):
     # Right hand landmarks
     if results.right_hand_landmarks:
         frame_data["landmarks"]["right_hand"] = {
-            pose_tangan[i]: (lm.x * image_shape[1], lm.y * image_shape[0])
+            pose_tangan[i]: (lm.x * image_shape[1], lm.y * image_shape[0], lm.z)
             for i, lm in enumerate(results.right_hand_landmarks.landmark)
         }
         has_landmarks = True
@@ -57,7 +61,7 @@ def extract_landmarks(results, image_shape, frame_count):
     # Left hand landmarks
     if results.left_hand_landmarks:
         frame_data["landmarks"]["left_hand"] = {
-            pose_tangan_2[i]: (lm.x * image_shape[1], lm.y * image_shape[0])
+            pose_tangan_2[i]: (lm.x * image_shape[1], lm.y * image_shape[0], lm.z)
             for i, lm in enumerate(results.left_hand_landmarks.landmark)
         }
         has_landmarks = True
@@ -69,6 +73,7 @@ def extract_landmarks(results, image_shape, frame_count):
 # Process video using MediaPipe Holistic
 with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
     frame_count = 0
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))  # Total frames in the video
     while cap.isOpened():
         start_time = time.time()  # Record frame start time
         success, frame = cap.read()
@@ -93,6 +98,9 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
         # Extract and save landmark data
         frame_count += 1
         extract_landmarks(results, frame.shape, frame_count)
+
+        # Display progress
+        print(f"Processed frame {frame_count}/{total_frames} ({(frame_count / total_frames) * 100:.2f}%)")
 
         # Calculate and display FPS
         elapsed_time = time.time() - start_time
@@ -121,3 +129,11 @@ if processed_data:
     print("All valid frame data has been saved to coordinate.json.")
 else:
     print("No valid frame data found. JSON file was not created.")
+
+# Calculate processed and remaining percentage
+num_processed_frames = len(processed_data)
+if total_frames > 0:
+    remaining_percent = ((total_frames - num_processed_frames) / total_frames) * 100
+    print(f"Remaining percentage: {remaining_percent:.2f}%")
+else:
+    print("Cannot calculate remaining percentage: invalid total frame count.")
