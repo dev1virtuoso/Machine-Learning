@@ -1,17 +1,27 @@
 import cv2
 import mediapipe as mp
 import numpy as np
-import time
 import json
-import open3d as o3d
+import torch
+from torchvision.transforms import Compose, Normalize, ToTensor
+from torch.hub import load
 
 # Initialize MediaPipe utilities
 mp_drawing = mp.solutions.drawing_utils
 mp_holistic = mp.solutions.holistic
 
+# MiDaS depth estimation setup
+def load_midas_model():
+    model = load('intel-isl/MiDaS', 'MiDaS_small')
+    model.eval()  # Set model to evaluation mode
+    return model
+
+midas_model = load_midas_model()
+transform = Compose([ToTensor(), Normalize(mean=[0.5], std=[0.5])])
+
 # Variables for tracking
-target_fps = 30  # Target FPS
-frame_duration = 1.0 / target_fps  # Duration per frame (seconds)
+target_fps = 30
+frame_duration = 1.0 / target_fps
 processed_data = []  # To store all frames with valid landmark data
 
 # Define body and hand landmarks for mapping
@@ -28,24 +38,34 @@ pose_tangan = ['WRIST', 'THUMB_CMC', 'THUMB_MCP', 'THUMB_IP', 'THUMB_TIP', 'INDE
 
 pose_tangan_2 = [name + '2' for name in pose_tangan]
 
-# Get video path from user
-video_path = input("Enter the MP4 file path: ")
-cap = cv2.VideoCapture(video_path)
+# Depth estimation function
+def estimate_depth(frame, model, transform):
+    # Convert frame to RGB and preprocess
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    input_batch = transform(rgb_frame).unsqueeze(0)
 
-if not cap.isOpened():
-    print("Error: Unable to open video. Check the file path.")
-    exit()
+    # Perform depth estimation
+    with torch.no_grad():
+        depth_map = model(input_batch)
+    depth_map = depth_map.squeeze().cpu().numpy()
 
-# Function to extract and append landmark data
-def extract_landmarks(results, image_shape, frame_count):
-    # Initialize data structure for the current frame
+    # Normalize depth map
+    depth_map = cv2.normalize(depth_map, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+    return depth_map
+
+# Extract landmarks and compute depth
+def extract_landmarks_with_depth(results, depth_map, image_shape, frame_count):
     frame_data = {"frame": frame_count, "landmarks": {}}
-    has_landmarks = False  # Flag to track if any landmarks exist
+    has_landmarks = False
 
     # Pose landmarks
     if results.pose_landmarks:
         frame_data["landmarks"]["pose"] = {
-            pose_tubuh[i]: (lm.x * image_shape[1], lm.y * image_shape[0], lm.z)
+            pose_tubuh[i]: (
+                lm.x * image_shape[1],
+                lm.y * image_shape[0],
+                depth_map[int(lm.y * image_shape[0]), int(lm.x * image_shape[1])]  # Depth Z-coordinate
+            )
             for i, lm in enumerate(results.pose_landmarks.landmark)
         }
         has_landmarks = True
@@ -53,7 +73,11 @@ def extract_landmarks(results, image_shape, frame_count):
     # Right hand landmarks
     if results.right_hand_landmarks:
         frame_data["landmarks"]["right_hand"] = {
-            pose_tangan[i]: (lm.x * image_shape[1], lm.y * image_shape[0], lm.z)
+            pose_tangan[i]: (
+                lm.x * image_shape[1],
+                lm.y * image_shape[0],
+                depth_map[int(lm.y * image_shape[0]), int(lm.x * image_shape[1])]  # Depth Z-coordinate
+            )
             for i, lm in enumerate(results.right_hand_landmarks.landmark)
         }
         has_landmarks = True
@@ -61,79 +85,72 @@ def extract_landmarks(results, image_shape, frame_count):
     # Left hand landmarks
     if results.left_hand_landmarks:
         frame_data["landmarks"]["left_hand"] = {
-            pose_tangan_2[i]: (lm.x * image_shape[1], lm.y * image_shape[0], lm.z)
+            pose_tangan_2[i]: (
+                lm.x * image_shape[1],
+                lm.y * image_shape[0],
+                depth_map[int(lm.y * image_shape[0]), int(lm.x * image_shape[1])]  # Depth Z-coordinate
+            )
             for i, lm in enumerate(results.left_hand_landmarks.landmark)
         }
         has_landmarks = True
 
-    # Only add frame data if there are any landmarks
     if has_landmarks:
         processed_data.append(frame_data)
 
 # Process video using MediaPipe Holistic
+video_path = input("Enter the MP4 file path: ")
+cap = cv2.VideoCapture(video_path)
+
+if not cap.isOpened():
+    print("Error: Unable to open video. Check the file path.")
+    exit()
+
+total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
     frame_count = 0
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))  # Total frames in the video
     while cap.isOpened():
-        start_time = time.time()  # Record frame start time
         success, frame = cap.read()
         if not success:
             print("End of video stream or error reading frame.")
             break
 
-        # Flip and convert frame for processing
+        start_time = time.time()
+
+        # Flip and preprocess frame
         frame = cv2.cvtColor(cv2.flip(frame, 1), cv2.COLOR_BGR2RGB)
-        frame.flags.writeable = False  # Optimize for processing
+        frame.flags.writeable = False
         results = holistic.process(frame)
 
-        # Convert back to BGR for visualization
-        frame.flags.writeable = True
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        # Estimate depth using MiDaS
+        depth_map = estimate_depth(frame, midas_model, transform)
 
-        # Draw landmarks directly on the original frame
-        mp_drawing.draw_landmarks(frame, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
-        mp_drawing.draw_landmarks(frame, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
-        mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_holistic.POSE_CONNECTIONS)
-
-        # Extract and save landmark data
+        # Extract landmarks and include depth
+        extract_landmarks_with_depth(results, depth_map, frame.shape, frame_count)
         frame_count += 1
-        extract_landmarks(results, frame.shape, frame_count)
 
         # Display progress
+        elapsed_time = time.time() - start_time
         print(f"Processed frame {frame_count}/{total_frames} ({(frame_count / total_frames) * 100:.2f}%)")
 
-        # Calculate and display FPS
-        elapsed_time = time.time() - start_time
-        fps = 1.0 / elapsed_time
-        cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-
-        # Show video frames with overlaid landmarks
+        # Show video and depth map
         cv2.imshow('Video with Landmarks', frame)
+        cv2.imshow('Depth Map', depth_map)
 
-        # Control frame duration to maintain target FPS
+        # Control FPS
         if elapsed_time < frame_duration:
             time.sleep(frame_duration - elapsed_time)
 
-        # Exit on pressing 'Esc'
+        # Exit on 'Esc'
         if cv2.waitKey(5) & 0xFF == 27:
             break
 
-# Release resources
 cap.release()
 cv2.destroyAllWindows()
 
-# Save all valid frame data to JSON after processing the full video
+# Save all valid frame data to JSON
 if processed_data:
-    with open("coordinate.json", "w") as f:
-        json.dump(processed_data, f, indent=4)  # Pretty-print JSON
-    print("All valid frame data has been saved to coordinate.json.")
+    with open("coordinate_with_depth.json", "w") as f:
+        json.dump(processed_data, f, indent=4)
+    print("Landmark data with depth saved to coordinate_with_depth.json.")
 else:
-    print("No valid frame data found. JSON file was not created.")
-
-# Calculate processed and remaining percentage
-num_processed_frames = len(processed_data)
-if total_frames > 0:
-    remaining_percent = ((total_frames - num_processed_frames) / total_frames) * 100
-    print(f"Remaining percentage: {remaining_percent:.2f}%")
-else:
-    print("Cannot calculate remaining percentage: invalid total frame count.")
+    print("No valid data found to save.")
