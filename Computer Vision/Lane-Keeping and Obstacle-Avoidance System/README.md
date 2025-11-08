@@ -1,4 +1,4 @@
-# Lane-Keeping and Obstacle-Avoidance System
+# Lane-Keeping and Obstacle-Avoidance System (L.K.O.A.)
 
 ## Project Goals
 
