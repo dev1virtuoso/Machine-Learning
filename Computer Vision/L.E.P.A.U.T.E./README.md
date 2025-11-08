@@ -1,4 +1,4 @@
-# LEPAUTE
+# Lie Equivariant Perception Algebraic Unified Transform Embedding Framework (L.E.P.A.U.T.E. Framework)
 
 A Python package for processing webcam images with a Lie group-based Transformer model and accessing the resulting data.
 
