@@ -1,4 +1,4 @@
-# A.R.I.E.L.: An Advanced Retrieval and Inference Engine for Learning
+# Advanced Retrieval and Inference Engine for Learning (A.R.I.E.L.)
 
 A.R.I.E.L. (Advanced Retrieval and Inference Engine for Learning). A.R.I.E.L. is a powerful engine that integrates retrieval, generation, and integration modules, aiming to provide efficient information retrieval and real-time answer generation capabilities.
 
