@@ -1,4 +1,4 @@
-# Vision-based Distance and Object Analysis(ViDiAD)
+# Vision-based Distance and Object Analysis (ViDiAD)
 
 This repository contains the code and resources for the Vision-based Distance and Object Analysis project. The goal of this project is to develop a system that utilizes computer vision techniques to analyze distances between objects and perform object analysis.
 
