@@ -18,7 +18,7 @@ elif torch.backends.mps.is_available():
 else:
     device = torch.device("cpu")
 
-print(f"→ Using device: {device}")
+print(f"-> Using device: {device}")
 
 TOKENIZER_PATH = "tokenizer.pkl"
 
@@ -142,7 +142,7 @@ class GPT(nn.Module):
 MODEL_PATH = "tiny_shakespeare_char_gpt.pt"
 
 if not os.path.exists(MODEL_PATH):
-    print(f"Error: Model file not found → {MODEL_PATH}")
+    print(f"Error: Model file not found -> {MODEL_PATH}")
     print("Please run train.py first to train and save the model.")
     exit(1)
 

@@ -42,7 +42,7 @@ C.H.A.R.L.O.T.T.E. is a chess-playing AI framework that utilizes a Deep Q-Learni
 
 ## Simulation Details
 - **Model Architecture**:
-  - CNN: Three convolutional layers (12→64, 64→128, 128→256) followed by two fully connected layers (256*8*8→512, 512→218).
+  - CNN: Three convolutional layers (12->64, 64->128, 128->256) followed by two fully connected layers (256*8*8->512, 512->218).
   - Action Space: Up to 218 legal moves per board state, dynamically filtered.
 - **Training Parameters**:
   - Episodes: 1000

@@ -25,7 +25,7 @@ elif torch.backends.mps.is_available():
 else:
     device = torch.device("cpu")
 
-print(f"→ Using device: {device}")
+print(f"-> Using device: {device}")
 
 torch.manual_seed(1337)
 if device.type == 'cuda':
@@ -205,10 +205,10 @@ MODEL_PATH    = "tiny_shakespeare_char_gpt.pt"
 TOKENIZER_PATH = "tokenizer.pkl"
 
 torch.save(model.state_dict(), MODEL_PATH)
-print(f"Model saved → {MODEL_PATH}")
+print(f"Model saved -> {MODEL_PATH}")
 
 with open(TOKENIZER_PATH, 'wb') as f:
     pickle.dump({'stoi': stoi, 'itos': itos, 'vocab_size': vocab_size}, f)
-print(f"Tokenizer saved → {TOKENIZER_PATH}")
+print(f"Tokenizer saved -> {TOKENIZER_PATH}")
 
 print("\nTraining finished.")

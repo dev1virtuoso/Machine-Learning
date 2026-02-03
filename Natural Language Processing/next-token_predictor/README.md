@@ -47,8 +47,8 @@ python train.py
 
 - ~30,000 steps (adjust `max_iters` to taste)
 - Prints train/val loss every 500 steps
-- Saves model → `tiny_shakespeare_char_gpt.pt`
-- Saves tokenizer → `tokenizer.pkl`
+- Saves model -> `tiny_shakespeare_char_gpt.pt`
+- Saves tokenizer -> `tokenizer.pkl`
 
 Training takes:
 
