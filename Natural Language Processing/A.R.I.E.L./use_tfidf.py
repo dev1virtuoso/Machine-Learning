@@ -19,28 +19,20 @@ def load_model(model_dir):
     return tfidf_vectorizer, tfidf_matrix
 
 def generate_text(query, tfidf_vectorizer, tfidf_matrix):
-    # Vectorize the query text
     query_vector = tfidf_vectorizer.transform([query])
 
-    # Compute the similarity between the query text and the texts in the corpus
     similarities = cosine_similarity(query_vector, tfidf_matrix)
 
-    # Find the index of the most similar text
     most_similar_index = similarities.argmax()
 
-    # Get the most similar text
     most_similar_text = tfidf_matrix[most_similar_index]
 
-    # Convert the most similar text to a string
     generated_text = most_similar_text.toarray().squeeze().tolist()
 
     return generated_text
 
-# Load the model
 tfidf_vectorizer, tfidf_matrix = load_model(model_dir)
 
-# Generate text
 generated_text = generate_text(query, tfidf_vectorizer, tfidf_matrix)
 
-# Print the generated text
 print("Generated Text:", generated_text)

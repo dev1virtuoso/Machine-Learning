@@ -13,8 +13,8 @@ morse_code = {
     '5': '.....', '6': '-....', '7': '--...', '8': '---..', '9': '----.'
 }
 
-input_messages = ['HELLO', 'WORLD', 'OPENAI']
-target_messages = ['.... . .-.. .-.. ---', '.-- --- .-. .-.. -..', '--- .--. . -. .-.-.-']
+input_messages = ['HELLO', 'WORLD']
+target_messages = ['.... . .-.. .-.. ---', '.-- --- .-. .-.. -..']
 
 input_vocab = sorted(set(''.join(input_messages) + '0123456789'))
 target_vocab = sorted(set(' '.join(target_messages).split()))
@@ -34,7 +34,6 @@ target_vocab.append('<end>')
 target_token_index['<end>'] = len(target_vocab) - 1
 num_decoder_tokens = len(target_vocab)
 
-# Convert text data to numerical sequences
 encoder_input_data = np.zeros(
     (len(input_messages), max_encoder_seq_length, num_encoder_tokens), dtype="float32"
 )
@@ -54,7 +53,6 @@ for i, (input_text, target_text) in enumerate(zip(input_messages, target_message
         if t > 0:
             decoder_target_data[i, t - 1, target_token_index[char]] = 1.0
 
-# Define the neural network model
 latent_dim = 256
 encoder_inputs = Input(shape=(None, num_encoder_tokens))
 encoder = LSTM(latent_dim, return_state=True)
@@ -69,9 +67,7 @@ decoder_outputs = decoder_dense(decoder_outputs)
 
 model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
 
-# Compile and train the model
 model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
 model.fit([encoder_input_data, decoder_input_data], decoder_target_data, batch_size=64, epochs=50, validation_split=0.2)
 
-# Save the model
 model.save('morse_translation_model.h5')

@@ -1,5 +1,3 @@
-# Copyright (c) 2024 Carson. All rights reserved.
-
 import json
 
 # Read the SQuAD dataset

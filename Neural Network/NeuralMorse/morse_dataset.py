@@ -6,5 +6,5 @@ morse_code = {
     '5': '.....', '6': '-....', '7': '--...', '8': '---..', '9': '----.'
 }
 
-input_messages = ['HELLO', 'WORLD', 'OPENAI']
-target_messages = ['.... . .-.. .-.. ---', '.-- --- .-. .-.. -..', '--- .--. . -. .-.-.-']
+input_messages = ['HELLO', 'WORLD']
+target_messages = ['.... . .-.. .-.. ---', '.-- --- .-. .-.. -..',]

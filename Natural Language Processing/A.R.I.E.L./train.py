@@ -6,33 +6,26 @@ from torchtext.datasets import TranslationDataset
 from torchtext.data.metrics import bleu_score
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 
-# Set random seed
 SEED = 42
 torch.manual_seed(SEED)
 torch.cuda.manual_seed(SEED)
 
-# Define input and output fields
 tokenizer = T5Tokenizer.from_pretrained('t5-base')
 SRC = Field(tokenize=tokenizer.tokenize, init_token='<sos>', eos_token='<eos>', lower=True)
 TRG = Field(tokenize=tokenizer.tokenize, init_token='<sos>', eos_token='<eos>', lower=True)
 
-# Load and split the dataset
 train_data, valid_data, test_data = TranslationDataset.splits(
     path='data_path', exts=('.src', '.trg'), fields=(SRC, TRG))
 
-# Build the vocabulary
 SRC.build_vocab(train_data, min_freq=2)
 TRG.build_vocab(train_data, min_freq=2)
 
-# Define the model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = T5ForConditionalGeneration.from_pretrained('t5-base').to(device)
 
-# Define the loss function and optimizer
 criterion = nn.CrossEntropyLoss(ignore_index=TRG.vocab.stoi['<pad>'])
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-# Define the training loop
 def train(model, iterator, optimizer, criterion, clip):
     model.train()
     epoch_loss = 0
@@ -54,7 +47,6 @@ def train(model, iterator, optimizer, criterion, clip):
 
     return epoch_loss / len(iterator)
 
-# Define the evaluation loop
 def evaluate(model, iterator, criterion):
     model.eval()
     epoch_loss = 0
@@ -71,7 +63,6 @@ def evaluate(model, iterator, criterion):
 
     return epoch_loss / len(iterator)
 
-# Train the model
 N_EPOCHS = 10
 CLIP = 1
 best_valid_loss = float('inf')
@@ -84,13 +75,10 @@ for epoch in range(N_EPOCHS):
         best_valid_loss = valid_loss
         torch.save(model.state_dict(), 'model.pt')
 
-# Load the saved best model
 model.load_state_dict(torch.load('model.pt'))
 
-# Test the model
 test_loss = evaluate(model, test_iterator, criterion)
 
-# Perform inference with the model
 def translate_sentence(sentence, src_field, trg_field, model, device, max_len=50):
     model.eval()
     tokens = src_field.tokenize(sentence)
@@ -104,7 +92,6 @@ def translate_sentence(sentence, src_field, trg_field, model, device, max_len=50
     trg_text = trg_field.decode(output[0], skip_special_tokens=True)
     return trg_text
 
-# Example usage
 example_sentence = "How are you?"
 translation = translate_sentence(example_sentence, SRC, TRG, model, device)
 print(f'Source: {example_sentence}')

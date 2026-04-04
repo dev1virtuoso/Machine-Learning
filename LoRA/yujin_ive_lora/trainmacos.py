@@ -1,11 +1,9 @@
 import subprocess
 
-# Train data path
 pretrained_model = "/path/to/directorychilloutmix_NiPrunedFp32Fix.safetensors"
 train_data_dir = "/path/to/directory"
 reg_data_dir = "/path/to/directory"
 
-# Train related params
 resolution = "768,768"
 batch_size = 2
 max_train_epochs = 10
@@ -16,7 +14,6 @@ clip_skip = 2
 train_unet_only = 0
 train_text_encoder_only = 0
 
-# Learning rate
 lr = "5e-5"
 unet_lr = "5e-5"
 text_encoder_lr = "6e-6"
@@ -24,7 +21,6 @@ lr_scheduler = "cosine_with_restarts"
 lr_warmup_steps = 50
 lr_restart_cycles = 1
 
-# Output settings
 output_name = "yujinive_v2"
 save_model_as = "safetensors"
 
@@ -33,13 +29,10 @@ min_bucket_reso = 256
 max_bucket_reso = 1024
 persistent_data_loader_workers = 0
 
-# Activate python venv
 subprocess.run(["source", "venv/bin/activate"], shell=True)
 
-# Set environment variable
 subprocess.run(["export", "HF_HOME=huggingface"], shell=True)
 
-# Run train
 subprocess.run([
     "python", "-m", "accelerate", "launch", "--num_processes=1", "--num_workers=8", "--use_env",
     "./sd-scripts/train_network.py",

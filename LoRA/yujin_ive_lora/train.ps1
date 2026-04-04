@@ -1,41 +1,36 @@
-# Train data path 
-$pretrained_model="/path/to/directorychilloutmix_NiPrunedFp32Fix.safetensors" # base model path 
+$pretrained_model="/path/to/directorychilloutmix_NiPrunedFp32Fix.safetensors"
 $train_data_dir="/path/to/directory"
-$reg_data_dir = "" # directory for regularization images 
+$reg_data_dir = ""
 
-# Train related params 
-$resolution = "768,768" # image resolution w,h.
-$batch_size = 2 # batch size
-$max_train_epoches = 10 # max train epoches 
-$save_every_n_epochs = 1 # save every n epochs 
-$network_dim = 64 # network dim 
-$network_alpha = 32 # network alpha
-$clip_skip = 2 # clip skip 
-$train_unet_only = 0 # train U-Net only 
-$train_text_encoder_only = 0 # train Text Encoder only 
+$resolution = "768,768"
+$batch_size = 2
+$max_train_epoches = 10
+$save_every_n_epochs = 1
+$network_dim = 64
+$network_alpha = 32
+$clip_skip = 2
+$train_unet_only = 0 
+$train_text_encoder_only = 0
 
-# Learning rate 
 $lr = "5e-5"
 $unet_lr = "5e-5"
 $text_encoder_lr = "6e-6"
-$lr_scheduler = "cosine_with_restarts" # "linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup"
-$lr_warmup_steps = 50 # warmup steps 
-$lr_restart_cycles = 1 # cosine_with_restarts restart cycles 
+$lr_scheduler = "cosine_with_restarts"
+$lr_warmup_steps = 50
+$lr_restart_cycles = 1
 
-# Output settings 
-$output_name = "yujinive_v2" # output model name 
-$save_model_as = "safetensors" # model save ext 
+$output_name = "yujinive_v2"
+$save_model_as = "safetensors"
 
-$network_weights = "" # pretrained weights for LoRA network 
+$network_weights = ""
 # $network_weights = "D:\workspace\stable-diffusion-webui\models\Lora\koreanDollLikeness_v10.safetensors" # pretrained weights for LoRA network 
-$min_bucket_reso = 256 # arb min resolution 
-$max_bucket_reso = 1024 # arb max resolution 
-$persistent_data_loader_workers = 0 # persistent dataloader workers 
+$min_bucket_reso = 256
+$max_bucket_reso = 1024
+$persistent_data_loader_workers = 0
 
-$use_8bit_adam = 0 # use 8bit adam optimizer 
-$use_lion = 1 # use lion optimizer 
+$use_8bit_adam = 0
+$use_lion = 1
 
-# Activate python venv
 .\venv\Scripts\activate
 
 $Env:HF_HOME = "huggingface"
