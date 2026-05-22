@@ -1,0 +1,74 @@
+version: "1.0"
+robot_name: "heracles"
+
+bus_ports:
+  left_leg_bus: "/dev/ttyUSB0"
+  right_leg_bus: "/dev/ttyUSB1"
+  upper_body_bus: "/dev/ttyACM0"
+
+joints:
+  left_hip_roll:
+    port: "left_leg_bus"
+    node_id: 1
+    motor_idx: 0
+    motor_type: 1
+    direction_sign: 1
+    zero_offset: 2048
+    min_limit: 1024
+    max_limit: 3072
+    rad_to_raw_scale: 651.89\
+
+  left_hip_pitch:
+    port: "left_leg_bus"
+    node_id: 1
+    motor_idx: 1
+    motor_type: 1
+    direction_sign: 1
+    zero_offset: 1800
+    min_limit: 800
+    max_limit: 2800
+    rad_to_raw_scale: 651.89
+
+  left_knee_pitch:
+    port: "left_leg_bus"
+    node_id: 2
+    motor_idx: 0
+    motor_type: 1
+    direction_sign: -1
+    zero_offset: 1500
+    min_limit: 500
+    max_limit: 2500
+    rad_to_raw_scale: 651.89
+
+  right_hip_roll:
+    port: "right_leg_bus"
+    node_id: 1
+    motor_idx: 0
+    motor_type: 1
+    direction_sign: -1
+    zero_offset: 2048
+    min_limit: 1024
+    max_limit: 3072
+    rad_to_raw_scale: 651.89
+
+  right_hip_pitch:
+    port: "right_leg_bus"
+    node_id: 1
+    motor_idx: 1
+    motor_type: 1
+    direction_sign: -1
+    zero_offset: 1800
+    min_limit: 800
+    max_limit: 2800
+    rad_to_raw_scale: 651.89
+
+  right_knee_pitch:
+    port: "right_leg_bus"
+    node_id: 2
+    motor_idx: 0
+    motor_type: 1
+    direction_sign: 1
+    zero_offset: 1500
+    min_limit: 500
+    max_limit: 2500
+    rad_to_raw_scale: 651.89

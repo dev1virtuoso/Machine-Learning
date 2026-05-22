@@ -1,4 +1,7 @@
-# Heracles Humanoid Robot Platform V6
+# Heracles Humanoid Robot Platform
+
+> [!NOTE]
+> This project is considered deprecated and abandoned. It may not be actively maintained or updated. Please use it with caution. Haven't test on humaniod robot (Although every effort has been made to ensure there are no vulnerabilities, I cannot guarantee it is completely bug-free.). Please use it with caution.
 
 ## Project Status: Open-Source Transition and Cessation of Internal Development
 
