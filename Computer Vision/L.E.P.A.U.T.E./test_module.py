@@ -5,7 +5,6 @@ from module import LepauteConfig, DepthAwareSE3Warping, TransformerModel, DenseS
 
 class TestLepauteModule(unittest.TestCase):
     def setUp(self):
-        # Override for strict CI/CD environments and force deterministic hardware graphs
         self.config = LepauteConfig(device="cpu")
         self.batch_size = 2
         self.dummy_input = torch.randn(self.batch_size, 3, self.config.orig_h, self.config.orig_w)
@@ -36,8 +35,7 @@ class TestLepauteModule(unittest.TestCase):
         xi = torch.randn(1, 6, requires_grad=True)
         img = torch.randn(1, 3, self.config.orig_h, self.config.orig_w, requires_grad=True)
         depth = torch.ones(1, self.config.orig_h, self.config.orig_w, requires_grad=True)
-        
-        # Test the newly integrated pose decoupling outputs
+
         embed, pose_pred = model(img, depth, xi)
         
         loss = embed.sum() + pose_pred.sum()

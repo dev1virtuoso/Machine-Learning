@@ -30,7 +30,6 @@ logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s: %(message)s', 
 logger = logging.getLogger("LEPAUTE.Core")
 
 class LepauteConfig(BaseSettings):
-    """Unified Industrial Configuration Layer with Strict Validation."""
     device: str = Field(
         default_factory=lambda: "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
     )
@@ -39,11 +38,9 @@ class LepauteConfig(BaseSettings):
     max_disk_files: int = 2000
     object_names: List[str] = ["Turbine Blade", "PCB Assembly", "Calibration Marker", "Industrial Tool"]
     
-    # Model Configuration
     backbone_name: str = "mobilenetv3_large_100"
     dl_inference_freq: int = 5
     
-    # Intrinsic Camera Parameters (640x480 standard fallback)
     fx: float = 640.0
     fy: float = 640.0
     cx: float = 320.0
@@ -93,7 +90,6 @@ class CameraIOStream:
         phi = 0.0
         while self.running:
             if self.mock_mode:
-                # Advanced Industrial Mock Generator
                 frame = np.zeros((self.config.orig_h, self.config.orig_w, 3), dtype=np.float32)
                 gradient = np.linspace(30, 90 + 30 * np.sin(phi * 0.3), self.config.orig_w)
                 frame[:] = gradient

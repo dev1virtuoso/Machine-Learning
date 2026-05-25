@@ -51,12 +51,10 @@ class InferenceWorker(threading.Thread):
                 
                 run_heavy = (self.frame_counter % self.config.dl_inference_freq == 0)
                 
-                # Fast CV Tracking
                 xi, rmse, depth_map = self.tracker.estimate_pose(prev_frame, curr_frame, run_depth=run_heavy)
                 
                 cat, conf = self._latest_result["category"], self._latest_result["conf"]
                 
-                # Asynchronous Heavy Deep Learning Block
                 if run_heavy:
                     cat, conf = self.classifier.classify(curr_frame)
                     rgb = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2RGB)
@@ -71,7 +69,6 @@ class InferenceWorker(threading.Thread):
                         else:
                             emb, pose_pred = self.model(img_t, depth_t, xi_t)
                     
-                    # Blend neural spatial inference directly back into CV estimation
                     pose_pred_np = pose_pred.squeeze(0).cpu().numpy()
                     confidence_factor = min(1.0, max(0.0, 1.0 - (rmse / 10.0)))
                     xi = (1.0 - (0.3 * confidence_factor)) * xi + (0.3 * confidence_factor) * pose_pred_np
@@ -120,7 +117,6 @@ def run_pipeline(display_mode: str = "realtime", config: Optional[LepauteConfig]
     tracker = DenseSE3Tracker(config=cfg)
     classifier = SigLIPClassifier(config=cfg)
     
-    # Ready for TorchScript inference optimization
     raw_model = TransformerModel(config=cfg).to(device).eval()
     model = raw_model
     

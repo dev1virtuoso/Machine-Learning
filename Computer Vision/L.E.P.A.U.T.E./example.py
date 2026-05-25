@@ -6,7 +6,7 @@ def execute_training_validation():
     logging.basicConfig(level=logging.INFO)
     print("Initiating full Structural Telemetry collection (CI/CD Mock Mode Activated)...")
     
-    config = LepauteConfig(device="cpu") # CI/CD Fallback config
+    config = LepauteConfig(device="cpu")
     collected = run_pipeline(
         config=config,
         display_mode="json", 
