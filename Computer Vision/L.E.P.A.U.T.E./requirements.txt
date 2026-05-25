@@ -1,0 +1,10 @@
+torch>=2.3.0
+torchvision>=0.18.0
+transformers>=4.40.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+pytorch-metric-learning>=2.0.0
+pillow>=10.0.0
+timm>=0.9.0
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
