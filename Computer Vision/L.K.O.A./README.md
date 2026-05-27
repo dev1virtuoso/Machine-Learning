@@ -1,69 +1,48 @@
 # Lane-Keeping and Obstacle-Avoidance System (L.K.O.A.)
 
-## Project Goals
+### Abstract
+The Lane-Keeping and Obstacle-Avoidance System (L.K.O.A.) is an industrial pure-vision autonomous navigation control engine optimized for deployment on embedded edge platforms. By synthesizing asynchronous dual-buffered camera frames with specialized ONNX-based deep learning models, the system computes real-time environmental depth maps and structural object tracking vectors. L.K.O.A. natively interprets surrounding spatial dynamics to govern a definitive Finite State Machine (FSM), producing linear velocity and lateral steering commands while managing onboard hardware constraints safely.
 
-The goal of this project is to enhance the reliability and accuracy of the Autopilot system, specifically focusing on the lane-keeping and obstacle-avoidance capabilities. Our aim is to improve the performance of the Autopilot system, making it more robust and precise in navigating through lanes and avoiding obstacles.
+## System Overview
 
-## Installation Guide
+```mermaid
+graph TD
+    A[ThreadSafeCameraReader] -->|Raw BGR Frame| B[ProductionVisionEngine]
+    
+    subgraph Perception Pipeline
+        B -->|Channel 1| C[YOLOv8 Object Detector]
+        B -->|Channel 2| D[MiDaS Disparity Profiler]
+        C -->|Bounding Boxes| E[MultiCueBottomRefiner]
+        D -->|Disparity Array| F[MultiBandRANSACSolver]
+        F -->|Pitch & Scale Factor| G[Minimum-Variance Fusion Engine]
+        E -->|Refined Contact Vector| G
+        G -->|Fused Spatial Distances| H[LightweightObstacleFilter]
+    end
 
-To install the Lane-Keeping and Obstacle-Avoidance System, follow these steps:
+    subgraph Executive Logic & Control
+        H -->|Extrapolated Telemetry| I[Finite State Machine FSM]
+        D -->|Corridor Zones Matrix| I
+        I -->|Vehicle Control State| J[RobustUARTCommandPublisher]
+    end
 
-1. Clone the project repository from GitHub:
-`git clone https://github.com/dev1virtuoso/Machine-Learning.git`
+```
 
-2. Install the necessary dependencies by running the following command:
-   `pip install -r requirements.txt`
 
-3. Set up the required hardware components and configure the environment as specified in the project documentation.
+## Features and Capabilities
 
-## Usage Instructions
+* **Asynchronous Double-Buffered Capture Engine:** Utilizes a dedicated V4L2 background worker thread to eliminate input ingestion bottlenecks, complete with automated device recycling and exponential backoff recovery.
+* **Dual-Core Embedded ONNX Inference Pipelines:** Parallel processing threads execute specialized instances of YOLOv8 object detection alongside MiDaS spatial disparity estimation, optimized specifically for quad-core ARM architectures.
+* **Multi-Band RANSAC Ground Segmentation:** Strategically samples a stratified lower layout matrix to isolate and track the ground plane angle, allowing accurate dynamic calculation of physical distance scaling factors.
+* **Multi-Cue Contact Point Refinement:** Fuses high-frequency Sobel intensity filters, Canny edge accumulations, and depth boundary discontinuities to precisely lock onto obstacle ground contact intersections.
+* **Minimum-Variance Spatial Fusion:** Synthesizes geometric calculations, strict rigid-body class priors, and monocular depth profiles using a runtime variance engine where measurement uncertainty scales relative to distance.
+* **Dynamic Thermal Governance Logic:** Implements automated dual-edge recovery hysteresis to step down deep-model execution frequencies whenever high CPU thresholds are exceeded, ensuring processing stability.
+* **High-Availability FSM Interception:** Features immediate safety override triggers for emergency stops alongside a Proportional Navigation law mapping steering outputs continuously during lateral obstacle avoidance.
 
-To use the enhanced Autopilot system, follow these instructions:
+## Authors
 
-1. Import the Autopilot module into your project:
-   from autopilot import Autopilot
+* Carson Wu
+* Jonathan Tse
 
-2. Initialize the Autopilot object:
-   autopilot = Autopilot()
-  
-3. Connect the vehicle's sensors and controllers to the Autopilot system.
+## License
 
-4. Call the Autopilot's control function to activate the automated navigation:
-   autopilot.control() This function will continuously monitor sensor inputs, process the data, and generate control commands for maintaining lane position and avoiding obstacles.
-
-5. Monitor the vehicle's behavior and performance while the Autopilot is engaged. Ensure that the algorithm operates reliably and accurately.
-
-## Demo
-
-We have included a comprehensive demo in the `demo/` directory to showcase the enhanced capabilities of the Autopilot system. To run the demo, follow these steps:
-
-1. Navigate to the `demo/` directory:
-   cd demo
-
-2. Execute the demo script:
-   python autopilot_demo.py
-   The demo script will simulate real-world scenarios, demonstrating the improved reliability and accuracy of the Autopilot system in lane-keeping and obstacle-avoidance tasks.
-
-## Contribution Guidelines
-
-We welcome contributions to the Lane-Keeping and Obstacle-Avoidance System project. If you would like to contribute, please adhere to the following guidelines:
-
-1. Fork the project repository.
-2. Create a new branch for your feature or bug fix.
-3. Make your changes and commit them with descriptive messages.
-4. Push your changes to your forked repository.
-5. Submit a pull request, providing a clear explanation of your contribution and its purpose.
-
-## Author and Contact Information
-
-Authors: Carson and Mr. Jonathan Tse
-
-For any inquiries or feedback regarding the project, feel free to contact us:
-
-- Carson
-  - Email: [following methods](https://github.com/dev1virtuoso/Documentation/blob/main/dev1virtuoso/Attachment/dev1virtuoso/carson-wu.md#Contact)
-
-- Mr. Jonathan Tse
-  - Email:
-
-We appreciate your interest and support in enhancing the Autopilot system to achieve greater reliability and accuracy in lane-keeping and obstacle-avoidance tasks.
+MIT License
