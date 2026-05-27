@@ -1,7 +1,7 @@
 # Lane-Keeping and Obstacle-Avoidance System (L.K.O.A.)
 
 ### Abstract
-The Lane-Keeping and Obstacle-Avoidance System (L.K.O.A.) is an industrial pure-vision autonomous navigation control engine optimized for deployment on embedded edge platforms. By synthesizing asynchronous dual-buffered camera frames with specialized ONNX-based deep learning models, the system computes real-time environmental depth maps and structural object tracking vectors. L.K.O.A. natively interprets surrounding spatial dynamics to govern a definitive Finite State Machine (FSM), producing linear velocity and lateral steering commands while managing onboard hardware constraints safely.
+The Lane-Keeping and Obstacle-Avoidance System (L.K.O.A.) is an pure-vision autonomous navigation control engine optimized for deployment on embedded edge platforms. By synthesizing asynchronous dual-buffered camera frames with specialized ONNX-based deep learning models, the system computes real-time environmental depth maps and structural object tracking vectors. L.K.O.A. natively interprets surrounding spatial dynamics to govern a definitive Finite State Machine (FSM), producing linear velocity and lateral steering commands while managing onboard hardware constraints safely.
 
 ## System Overview
 
