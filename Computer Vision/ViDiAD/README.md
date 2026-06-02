@@ -39,7 +39,7 @@ MIT License.
 
 ## Author
 
-* [Carson](https://github.com/dev1virtuoso/Documentation/blob/main/dev1virtuoso/Attachment/dev1virtuoso/carson-wu.md#Contact)
+* [Carson Wu](https://github.com/dev1virtuoso/Documentation/blob/main/dev1virtuoso/Attachment/dev1virtuoso/carson-wu.md#Contact)
 * Jonathan Tse
 * Marcus Tong
 * Hose Wong
