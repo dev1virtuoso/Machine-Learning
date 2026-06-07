@@ -106,4 +106,4 @@ pip install torch requests
 
 Heavily inspired by Andrej Karpathy's [nanoGPT](https://github.com/karpathy/nanoGPT) and his excellent "Neural Networks: Zero to Hero" YouTube series.
 
-Enjoy Shakespeare in the style of a tiny transformer! 🧙‍♂️
+Enjoy Shakespeare in the style of a tiny transformer!
