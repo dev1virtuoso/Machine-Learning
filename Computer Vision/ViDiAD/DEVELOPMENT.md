@@ -1,4 +1,4 @@
-# ViDiAD Development and Integration Guide
+# Development and Integration Guide
 
 ## 1. Overview
 
