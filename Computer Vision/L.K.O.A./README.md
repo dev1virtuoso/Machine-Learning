@@ -24,7 +24,6 @@ graph TD
         D -->|Corridor Zones Matrix| I
         I -->|Vehicle Control State| J[RobustUARTCommandPublisher]
     end
-
 ```
 
 

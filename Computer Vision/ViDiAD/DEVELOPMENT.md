@@ -54,7 +54,6 @@ from module import CONFIG, RobustStereoStream, ProportionalKinematicController, 
 
 CONFIG["TARGET_TRAVEL_CORRIDOR_W"] = 0.60
 CONFIG["MAX_LINEAR_VELOCITY"] = 1.0
-
 ```
 
 ### 2. Initialize Hardware and Processing Nodes
@@ -67,7 +66,6 @@ cameras.start()
 
 controller = ProportionalKinematicController()
 active_filters = {} 
-
 ```
 
 ### 3. Implement the Perception Ingestion Loop
@@ -84,7 +82,6 @@ while True:
     state, velocity, steering = controller.calculate_velocities(hazards, "LEVEL_1_FULL_STEREO")
     
     my_hardware_interface.send(velocity, steering)
-
 ```
 
 ## ## high level Troubleshooting

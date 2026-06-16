@@ -27,7 +27,6 @@ custom_config = ProductionSystemConfig(
         center_y_px=241.8
     )
 )
-
 ```
 
 ### Step 2: Ingesting Subsystem Nodes
@@ -40,7 +39,6 @@ from module import ThreadSafeCameraReader, ProductionVisionEngine
 camera_stream = ThreadSafeCameraReader(custom_config).start()
 
 vision_engine = ProductionVisionEngine(custom_config)
-
 ```
 
 ### Step 3: Implementing the Execution Loop
@@ -72,7 +70,6 @@ except KeyboardInterrupt:
     print("Integration loop shutdown requested.")
 finally:
     camera_stream.terminate()
-
 ```
 
 ### Step 4: Interpreting Control Primitives

@@ -39,7 +39,6 @@ To execute the tracking system, interact directly with the provided executable t
 from module import ThreadSafeCameraReader, RobustUARTCommandPublisher
 hardware_reader = ThreadSafeCameraReader(sys_config).start()
 control_publisher = RobustUARTCommandPublisher(sys_config)
-
 ```
 
 3. **Run Process Loop Architecture:** Pass active memory matrices to the analytical navigation engine inside a frequency-locked synchronization loop:
@@ -50,7 +49,6 @@ engine = ProductionVisionEngine(sys_config)
 frame_fetched, active_frame = hardware_reader.get_latest_frame()
 current_state, linear_v, steer_w = engine.process_frame(active_frame)
 control_publisher.transmit(current_state, linear_v, steer_w)
-
 ```
 
 ## Common Use Cases
@@ -128,5 +126,4 @@ class_priors: Dict[int, List[float]] = field(default_factory=lambda: {
     56: [0.50, 0.85],  # Logistics Pallets/Bins (Width: 0.50m)
     11: [0.35, 0.70]   # Industrial Traffic Cones (Width: 0.35m)
 })
-
 ```

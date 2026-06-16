@@ -22,7 +22,6 @@ graph TD
     I -->|Smoothed Spatial Vector and Trend Map| J[ProportionalKinematicController]
     J -->|Calculated Linear / Angular Velocities| K[AGV Propulsion Drive Digital Output]
     L[ExecutionWatchdog Heartbeat Monitor] -->|Host Loop Refresh Validation| K
-
 ```
 
 ## Features and Capabilities

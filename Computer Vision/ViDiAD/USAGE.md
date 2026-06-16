@@ -43,20 +43,17 @@ The execution module supports three targeted modes of operation depending on sys
 1. **Automated Target Pair Image Capture**: Runs a headless pattern synchronization routine that monitors left and right camera feeds simultaneously for chess pattern matches, logging snapshots automatically onto disk when parameters settle.
 ```bash
 python3 example.py --mode capture --left-dir calib_left --right-dir calib_right --grid-w 9 --grid-h 6
-
 ```
 
 2. **Matrix Intrinsic Calibration**: Computes high-precision stereo remapping parameters based on collected target images, generating undistortion transforms saved to the deployment bundle.
 ```bash
 python3 example.py --mode calibrate --left-dir calib_left --right-dir calib_right --output stereo_calibration.npz --square-size 0.025
-
 ```
 
 
 3. **Headless Real-time Execution Pipeline**: Boots the default operation stream loop, pulling frames and applying tracking matrix models continuously, outputting navigation parameters down to the command console.
 ```bash
 python3 example.py --mode run
-
 ```
 
 ### Common Use Cases
