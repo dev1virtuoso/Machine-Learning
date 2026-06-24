@@ -1,129 +1,54 @@
 # Lie Equivariant Perception Algebraic Unified Transform Embedding Framework (L.E.P.A.U.T.E. Framework)
 
-A Python package for processing webcam images with a Lie group-based Transformer model and accessing the resulting data.
+## Abstract
+The L.E.P.A.U.T.E. Framework is a geometrically unified computer vision and robotics environment engineered for real-time spatial telemetry perception and multi-task optimization. By mapping sequential visual transitions into explicit Lie group representations, specifically the Special Euclidean Group SE(3), the architecture enforces strict structural equivariance across frame-to-frame transformations. Operating on continuous monocular video feeds, the core execution pipeline combines direct image alignment tracking, transformer-based structural embeddings, and zero-shot open-vocabulary vision-language classifiers to resolve high-fidelity camera ego-motion and relative object poses within a decoupled, asynchronous, multi-threaded framework.
 
-## Installation
+## System Overview
+The framework decouples data ingestion, asynchronous neural network inference execution, and state-based sequence persistence to maximize operational throughput and prevent main-thread latency blockages. 
 
-### Install from The Python Package Index (PyPI) (currently unavailable)
-
-```bash
-pip3 install lepaute
-
+```mermaid
+graph TD
+    A[CameraIOStream / Synthetic Failover] -->|Frame RGB & Metadata| B[Main Pipeline Loop]
+    B -->|Prev/Cur Frames & Initial Pose| C[MonocularDirectTracker]
+    C -->|Direct Image Alignment| D{Track Score > 0.1}
+    
+    D -->|Yes| E[InferenceWorker Async Queue]
+    D -->|No| F[ManifoldKinematicForecaster]
+    
+    subgraph Async Background Execution [InferenceWorker Thread]
+        E --> G[SigLIPClassifier]
+        E --> H[SE3ResidualRefiner Network]
+        G -->|Open-Vocabulary Object Label| I[Scale Prior Lookup]
+        I -->|Geometric Scalar Component| H
+        H -->|Refined Pose Update xi| J[History Buffer Staging]
+    end
+    
+    J -->|Asynchronous State Feedback| K[State Fusion Engine]
+    F -->|Kinematic Recovery Extrapolation| K
+    C -->|Short-Term Tracker Relative Pose| K
+    
+    K -->|Pose Arbitration & Integration| L[Global SE3 Pose Accumulation]
+    L -->|Telemetry Updates| M[Display & Sequence Output]
+    L -->|State Synchronization| F
+    L -->|Continuous Logging| N[SequenceDataCollector / SQLite Store]
 ```
 
-### Install from source (recommended)
+## Features and Capabilities
 
-1. Make the installation script executable:
+* **Lie Algebra Structural Equivariance**: Direct integration of Special Euclidean Group SE(3) tracking components utilizing customized geometric differentiable layers to warp raw visual feature maps relative to computed coordinate transitions.
+* **Asynchronous Multi-Threaded Inference Ring**: High-frequency data stream frames are entirely decoupled from deep learning execution blocks using worker queues, atomic state-locks, and a dynamic Time-To-Live (TTL) history buffer to completely prevent tracking thread interface latency.
+* **Hybrid Multi-Mode Pose Fusion**: A robust tracking arbitration layer that dynamically transitions between refined deep learning outputs, direct Gauss-Newton intensity-alignment tracking, and a manifold-based kinematic forecasting recovery loop during periods of severe visual degradation or occlusion.
+* **Open-Vocabulary Target Classification**: Embedded zero-shot contrastive image embeddings powered by SigLIP, enabling runtime target tracking definitions and automatic physical dimension scale prior injection without requiring visual categorization head retraining.
+* **Robust Hardware Failover Ingestion**: The data acquisition interface implements an automated fallback sequence, instantly spawning a synthetic parametric image sequence generator if the targeted physical capture hardware encounters latency anomalies or connection drops.
+* **Deterministic Training Grounding**: Complete optimization infrastructure embedding geometric Huber-loss regression models with contrastive objectives, fully integrated with seed replication and validation partitioning for reproducible offline training passes.
 
-```bash
-chmod +x install_dependencies.sh
+## License
 
-```
+MIT License.
 
-2. Run the script to initialize the local isolation build environment:
-
-```bash
-./install_dependencies.sh
-
-```
-
-### Check System Requirements
-
-1. Make the verification script executable:
-
-```bash
-chmod +x check_system_requirements.sh
-
-```
-
-2. Run the script to verify the environment baseline:
-
-```bash
-./check_system_requirements.sh
-
-```
-
-## Usage
-
-### Using `example_pip.py`
-
-Run the local pipeline subsystem verification:
-
-```bash
-python3 example_pip.py
-
-```
-
-* Executes the pipeline in mock mode, saves JSON telemetry, and prints verified 3D SE(3) transform parameters alongside detected object IDs.
-
-### Using `example.py`
-
-Run the full training validation:
-
-```bash
-python3 example.py
-
-```
-
-* Initiates structural telemetry collection (CI/CD Mock Mode), constructs an `EquivariantDataset` from continuous frame transitions, and executes a multi-task spatial contrastive training loop.
-
-### Execution Modes
-
-1. **GUI/Realtime Mode**:
-```bash
-python main.py
-
-```
-
-* Displays the camera feed (or synthetic industrial mock feed if hardware is unavailable).
-* Shows detected objects, confidence scores, SE(3) displacement, and RMSE directly on the UI.
-* Automatically saves telemetry to `lepaute_data.json` and images to the `frames` directory.
-
-2. **JSON/Headless Mode**:
-```python
-from main import run_pipeline
-run_pipeline(display_mode="json", unlimited=False, save_json=True)
-
-```
-
-
-* Runs inference without rendering a CV2 window and saves structured data directly to the disk.
-
-
-3. **Custom Configurations**:
-```python
-from module import LepauteConfig
-from main import run_pipeline
-
-custom_cfg = LepauteConfig(device="cuda", dl_inference_freq=2)
-run_pipeline(config=custom_cfg)
-
-```
-
-## Requirements
-
-* `torch>=2.3.0`
-* `torchvision>=0.18.0`
-* `transformers>=4.40.0`
-* `opencv-python>=4.8.0`
-* `numpy>=1.24.0`
-* `pytorch-metric-learning>=2.0.0`
-* `pillow>=10.0.0`
-* `timm>=0.9.0`
-* `pydantic>=2.7.0`
-* `pydantic-settings>=2.2.0`
-
-## Additional Contributors
+## Contributors
 
 ### PyCon HK 2025
 
 * Primary contributor: [shz2](https://twitter.com/shivvor2)
 * Special thanks to: [BenBenCHAK](https://github.com/BenBenCHAK), [usertam](https://github.com/usertam)
-
-## Notes
-
-* **Hardware Failover**: Ensure webcam access for real-time data collection. If the camera feed is lost or unavailable, `CameraIOStream` will automatically fall back to a synthetic mock generator to keep the pipeline running.
-* **Environment Variables**: Advanced configurations (intrinsic camera parameters, target object categories, maximum disk files) can be configured safely via environment variables prefixed with `LEPAUTE_` (e.g., `LEPAUTE_DEVICE="mps"`).
-* **Debugging**: Debug logs can be enabled by setting `logging.basicConfig(level=logging.DEBUG)` in your execution script.
-* **Continuous Execution**: The `DiskManager` automatically limits stored frames to the most recent 2,000 files (configurable) to prevent memory saturation during prolonged deployments.
-

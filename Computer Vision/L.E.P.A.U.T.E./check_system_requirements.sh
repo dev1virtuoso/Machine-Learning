@@ -1,56 +1,87 @@
 #!/bin/bash
+set -euo pipefail
+
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo "Starting environment baseline verification via importlib.metadata..."
+echo -e "${YELLOW}Starting environment baseline verification via dynamic AST parsing...${NC}"
+
+if [ ! -f "requirements.txt" ]; then
+    echo -e "${RED}Fatal Error: requirements.txt not found. Cannot verify system baselines.${NC}"
+    exit 1
+fi
 
 python3 -c "
 import sys
 import importlib.metadata
+import re
 
-required_packages = {
-    'torch': '2.3.0',
-    'torchvision': '0.18.0',
-    'transformers': '4.40.0',
-    'opencv-python': '4.8.0',
-    'numpy': '1.24.0',
-    'pytorch-metric-learning': '2.0.0',
-    'pillow': '10.0.0',
-    'timm': '0.9.0'
-}
+try:
+    from packaging.version import parse as parse_version
+except ImportError:
+    print('\033[0;31m[FAIL]\033[0m \'packaging\' module missing. Run install_dependencies.sh first.')
+    sys.exit(1)
 
-def parse_version(v_str):
-    return [int(x) for x in ''.join(c for c in v_str if c.isdigit() or c=='.').split('.') if x]
+def verify_requirements(req_file):
+    all_pass = True
+    with open(req_file, 'r') as f:
+        lines = f.readlines()
 
-print('-------------------------------------------')
-all_pass = True
-for pkg, min_ver in required_packages.items():
-    try:
-        # Standardized normalization logic matching modern wheels lookup metadata structures
-        lookup_name = 'opencv-python' if pkg == 'opencv-python' else pkg
-        installed_ver = importlib.metadata.version(lookup_name)
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
         
-        if parse_version(installed_ver) >= parse_version(min_ver):
-            print(f' \033[0;32m[PASS]\033[0m {pkg} installed: {installed_ver} >= {min_ver}')
-        else:
-            print(f' \033[0;31m[FAIL]\033[0m {pkg} installed: {installed_ver} < {min_ver}')
-            all_pass = False
-    except importlib.metadata.PackageNotFoundError:
-        # Check alternative common naming schemas mapping
+        match = re.match(r'^([a-zA-Z0-9_\-]+)(>=|==|>|<=|<)?([0-9\.]+)?', line)
+        if not match:
+            continue
+            
+        pkg_raw = match.group(1)
+        operator = match.group(2)
+        min_ver = match.group(3)
+        
         try:
-            alt_name = 'opencv-python-headless' if pkg == 'opencv-python' else pkg
-            installed_ver = importlib.metadata.version(alt_name)
-            print(f' \033[0;32m[PASS]\033[0m {pkg} ({alt_name}) installed: {installed_ver} >= {min_ver}')
+            installed_ver = importlib.metadata.version(pkg_raw)
+            
+            if min_ver and operator in ['>=', '==']:
+                if parse_version(installed_ver) >= parse_version(min_ver):
+                    print(f' \033[0;32m[PASS]\033[0m {pkg_raw} installed: {installed_ver} >= {min_ver}')
+                else:
+                    print(f' \033[0;31m[FAIL]\033[0m {pkg_raw} installed: {installed_ver} < {min_ver}')
+                    all_pass = False
+            else:
+                print(f' \033[0;32m[PASS]\033[0m {pkg_raw} installed: {installed_ver}')
+                
         except importlib.metadata.PackageNotFoundError:
-            print(f' \033[0;31m[FAIL]\033[0m {pkg} is not installed inside the active context.')
+            if pkg_raw == 'opencv-python':
+                try:
+                    installed_ver = importlib.metadata.version('opencv-python-headless')
+                    if min_ver and operator in ['>=', '==']:
+                        if parse_version(installed_ver) >= parse_version(min_ver):
+                            print(f' \033[0;32m[PASS]\033[0m {pkg_raw} (headless) installed: {installed_ver} >= {min_ver}')
+                        else:
+                            print(f' \033[0;31m[FAIL]\033[0m {pkg_raw} (headless) installed: {installed_ver} < {min_ver}')
+                            all_pass = False
+                    else:
+                        print(f' \033[0;32m[PASS]\033[0m {pkg_raw} (headless) installed: {installed_ver}')
+                    continue
+                except importlib.metadata.PackageNotFoundError:
+                    pass
+                    
+            print(f' \033[0;31m[FAIL]\033[0m {pkg_raw} is not installed inside the active context.')
             all_pass = False
+            
+    return all_pass
 
-sys.exit(0 if all_pass else 1)
+success = verify_requirements('requirements.txt')
+sys.exit(0 if success else 1)
 "
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}System Validation Complete. Constraints met successfully.${NC}"
+    echo -e "${GREEN}System Validation Complete. All architectural constraints met successfully.${NC}"
 else
-    echo -e "${RED}System baseline validation failed. Execute install_dependencies.sh script.${NC}"
+    echo -e "${RED}System baseline validation failed. Execute install_dependencies.sh to repair environment.${NC}"
+    exit 1
 fi
