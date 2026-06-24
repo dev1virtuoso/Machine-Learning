@@ -52,3 +52,7 @@ MIT License.
 
 * Primary contributor: [shz2](https://twitter.com/shivvor2)
 * Special thanks to: [BenBenCHAK](https://github.com/BenBenCHAK), [usertam](https://github.com/usertam)
+
+## References
+
+This project is a implementation of [Wu, C. (2025). Lie Equivariant Perception Algebraic Unified Transform Embedding Framework (L.E.P.A.U.T.E. Framework): Achieving Precise Modeling of Geometric Transformations. Document Identification Code: 20250501_01.](https://github.com/dev1virtuoso/Documentation/blob/main/dev1virtuoso/Research/2025/05_2025/20250501/20250501_01.md)
