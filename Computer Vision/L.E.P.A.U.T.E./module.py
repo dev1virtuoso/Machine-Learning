@@ -31,8 +31,6 @@ from pathlib import Path
     
 import sys
 
-
-
 _mps_lock = threading.Lock()
 
 logger = logging.getLogger("LEPAUTE.Core")
