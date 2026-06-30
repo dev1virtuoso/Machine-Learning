@@ -44,7 +44,7 @@ graph TD
 
 ## License
 
-MIT License.
+MIT License
 
 ## Contributors
 
