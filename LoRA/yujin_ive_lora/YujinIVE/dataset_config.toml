@@ -1,0 +1,22 @@
+[[datasets]]
+
+[[datasets.subsets]]
+image_dir = "/content/drive/MyDrive/Loras/Image/100_yujin_ikuyo"
+num_repeats = 10
+
+[[datasets.subsets]]
+image_dir = "/content/drive/MyDrive/Loras/reg/1_woman"
+is_reg = true
+num_repeats = 1
+
+[general]
+resolution = 512
+shuffle_caption = true
+keep_tokens = 1
+flip_aug = false
+caption_extension = ".txt"
+enable_bucket = true
+bucket_reso_steps = 64
+bucket_no_upscale = false
+min_bucket_reso = 256
+max_bucket_reso = 1024
