@@ -11,7 +11,7 @@ This repository is licensed under the MIT License, which provides users and cont
 
 ## Contribution Guidelines
 
-Contributions to this computer vision project are highly appreciated. If you wish to contribute, please adhere to the following guidelines:
+Contributions to this project are highly appreciated. If you wish to contribute, please adhere to the following guidelines:
 
 - Fork the repository and create a new branch for your contributions.
 - Make your changes and thoroughly test them.
@@ -21,6 +21,6 @@ By contributing to this project, you agree to license your contributions under t
 
 ## Contact Information
 
-If you have any questions or suggestions regarding this computer vision project, please feel free to contact me through [following methods](https://github.com/dev1virtuoso/Documentation/blob/main/dev1virtuoso/Attachment/dev1virtuoso/carson-wu.md#contact).
+If you have any questions or suggestions regarding this project, please feel free to contact me through [following methods](https://github.com/dev1virtuoso/Documentation/blob/main/dev1virtuoso/Attachment/dev1virtuoso/carson-wu.md#contact).
 
 Thank you for your interest and contributions to the project!
