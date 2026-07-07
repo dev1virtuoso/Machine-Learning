@@ -8,29 +8,70 @@ The framework decouples data ingestion, asynchronous neural network inference ex
 
 ```mermaid
 graph TD
-    A[CameraIOStream / Synthetic Failover] -->|Frame RGB & Metadata| B[Main Pipeline Loop]
-    B -->|Prev/Cur Frames & Initial Pose| C[MonocularDirectTracker]
-    C -->|Direct Image Alignment| D{Track Score > 0.1}
+    %% Data Ingestion and Loop Setup
+    A[CameraIOStream / Parametric Failover] -->|Frame RGB & Metadata| B[Main Pipeline Loop]
+    B -->|Worker Health Verification| C{worker.is_healthy?}
+    C -->|No: Timeout/Crash| D[SYSTEM HALT: Prevent Zombie Lock]
     
-    D -->|Yes| E[InferenceWorker Async Queue]
-    D -->|No| F[ManifoldKinematicForecaster]
+    %% Async Polling & Tracker Execution
+    C -->|Yes| E[Poll worker.get_latest_resolved_state]
+    E -->|Check Buffer State| F{Async State Resolved?}
+    F -->|Yes: pop State| G["Flag: has_async = True<br/>Extract Category & Confidence"]
+    F -->|No: Cache Miss| H[Flag: has_async = False]
     
-    subgraph Async Background Execution [InferenceWorker Thread]
-        E --> G[SigLIPClassifier]
-        E --> H[SE3ResidualRefiner Network]
-        G -->|Open-Vocabulary Object Label| I[Scale Prior Lookup]
-        I -->|Geometric Scalar Component| H
-        H -->|Refined Pose Update xi| J[History Buffer Staging]
+    G --> I[Execute MonocularDirectTracker.track]
+    H --> I
+    
+    %% Direct Tracker Internal Path
+    I -->|PyTorch Photometric Alignment| J{Direct Alignment Score >= 0.15?}
+    J -->|No| K["Execute _execute_orb_pnp_fallback<br/>SolvePnPRansac Local Opt"]
+    
+    %% Job Dispatched to Worker Queue
+    I -->|If Track Score > 0.1| L[worker.enqueue_job]
+    K --> L
+    
+    %% Mode Arbitration Matrix
+    G --> M{Arbitration Matrix}
+    J --> M
+    K --> M
+    
+    M -->|has_async == True| N["Mode: Refined<br/>best_rel_xi = refined_xi_rel"]
+    M -->|has_async == False && score >= 0.1| O["Mode: Tracker<br/>best_rel_xi = tracker_xi_rel"]
+    M -->|Tracking Alignment Fails| P["Mode: Recovery<br/>Query ManifoldKinematicForecaster"]
+    
+    %% Async Worker Thread Loop
+    subgraph Async Background Execution [InferenceWorker Thread Context]
+        L --> Q[("job_queue: Max 5")]
+        Q -->|De-queue Task| R[SigLIPClassifier Zero-Shot Head]
+        R -->|Predict Label Space| S[Dynamic Scale Prior Mapping]
+        S --> T[SE3ResidualRefiner Forward Pass]
+        
+        %% Refiner Internal Graph
+        subgraph SE3ResidualRefiner Pipeline
+            T --> U[ResNet18 Base Features]
+            U --> V[Lightweight depth_head Map]
+            U --> W[Inject Spatial pos_embed & pose_emb]
+            W --> X[SE3CrossAttentionBlock Space]
+            X --> Y[Joint Residual & Uncertainty Regression]
+        end
+        
+        Y -->|"delta_xi, delta_scale, unc_pose, unc_scale"| Z["Staging Stage: history_buffer"]
     end
     
-    J -->|Asynchronous State Feedback| K[State Fusion Engine]
-    F -->|Kinematic Recovery Extrapolation| K
-    C -->|Short-Term Tracker Relative Pose| K
+    Z -->|Atomic .pop eviction| E
     
-    K -->|Pose Arbitration & Integration| L[Global SE3 Pose Accumulation]
-    L -->|Telemetry Updates| M[Display & Sequence Output]
-    L -->|State Synchronization| F
-    L -->|Continuous Logging| N[SequenceDataCollector / SQLite Store]
+    %% State Fusion & Propagation
+    N --> AA["SE(3) Exponential Mapping & Poses Composition"]
+    O --> AA
+    P --> AA
+    
+    AA --> BB["Update ManifoldKinematicForecaster State<br/>Log-Space Scale Velocity Estimation"]
+    BB --> CC[Update Global 2D Trajectory Vector]
+    CC --> DD[SequenceDataCollector / SQLite WAL Persistence]
+    CC --> EE[OpenCV HUD Context Render]
+    
+    %% Feedback Loop
+    BB -.->|Feedback Scale Prior| I
 ```
 
 ## Features and Capabilities
@@ -44,7 +85,7 @@ graph TD
 
 ## License
 
-MIT License
+MIT License.
 
 ## Contributors
 

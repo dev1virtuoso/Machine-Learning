@@ -3,6 +3,7 @@ from main import run_pipeline
 from module import (
     LepauteConfig,
     DisplayMode,
+    PerformanceMode,
     skew_symmetric,
     se3_exp_map,
     se3_log_map,
@@ -24,6 +25,7 @@ __all__ = [
     "run_pipeline",
     "LepauteConfig",
     "DisplayMode",
+    "PerformanceMode",
     "skew_symmetric",
     "se3_exp_map",
     "se3_log_map",

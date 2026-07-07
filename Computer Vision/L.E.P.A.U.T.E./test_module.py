@@ -14,23 +14,15 @@ from torch.utils.data import DataLoader
 import cv2
 
 from module import (
-    LepauteConfig,
-    skew_symmetric,
-    se3_exp_map,
-    se3_log_map,
-    compose_poses,
-    MonocularDirectTracker,
-    SigLIPClassifier,
-    MonocularSE3Warping,
-    SE3CrossAttentionBlock,
-    SE3ResidualRefiner,
-    CameraIOStream,
-    SequenceDataCollector,
-    EquivariantDataset,
-    ManifoldKinematicForecaster,
-    train_sequence_loop,
-    load_data
+    LepauteConfig, DisplayMode, PerformanceMode,
+    skew_symmetric, se3_exp_map, se3_log_map, compose_poses,
+    MonocularDirectTracker, SigLIPClassifier, MonocularSE3Warping,
+    SE3CrossAttentionBlock, SE3ResidualRefiner, CameraIOStream,
+    SequenceDataCollector, EquivariantDataset, ManifoldKinematicForecaster,
+    train_sequence_loop, load_data
 )
+
+import time
 
 class TestLepauteCoreArchitecture(unittest.TestCase):
     def setUp(self):
@@ -64,7 +56,7 @@ class TestLepauteCoreArchitecture(unittest.TestCase):
         T_identity = se3_exp_map(zero_xi)
         self.assertTrue(torch.allclose(T_identity[:, :3, :3], torch.eye(3).unsqueeze(0)))
         self.assertTrue(torch.allclose(T_identity[:, :3, 3], torch.zeros(1, 3)))
-        
+    
         small_xi = torch.tensor([[1e-5, -2e-5, 1e-5, 3e-5, -1e-5, 2e-5]], dtype=torch.float32)
         T_small = se3_exp_map(small_xi)
         recovered_small_xi = se3_log_map(T_small)
@@ -144,26 +136,24 @@ class TestLepauteCoreArchitecture(unittest.TestCase):
         self.assertEqual(valid_mask.shape, (2, 1, 64, 64))
 
     def test_se3_cross_attention_block(self):
-
-        block = SE3CrossAttentionBlock(embed_dim=32, num_heads=2)
-        visual_feat = torch.rand(2, 32, 16, 16, dtype=torch.float32)
-        xi_prior = torch.rand(2, 6, dtype=torch.float32)
+        block = SE3CrossAttentionBlock(dim=32, num_heads=2)
+        visual_feat_flat = torch.rand(2, 256, 32, dtype=torch.float32)
         
-        output = block(visual_feat, xi_prior)
-        self.assertEqual(output.shape, (2, 32, 16, 16))
+        output = block(query=visual_feat_flat, key=visual_feat_flat, value=visual_feat_flat)
+        self.assertEqual(output.shape, (2, 256, 32))
 
     def test_se3_residual_refiner_and_compilation_loading(self):
-        refiner = SE3ResidualRefiner(self.config)
+        refiner = SE3ResidualRefiner(config=self.config, feature_dim=256, max_resolution=64)
         img_a = torch.rand(2, 3, 64, 64, dtype=torch.float32)
         img_b = torch.rand(2, 3, 64, 64, dtype=torch.float32)
         xi_noisy = torch.rand(2, 6, dtype=torch.float32)
-        scale_prior = torch.rand(2, 1, dtype=torch.float32)
         
-        outputs = refiner(img_a, img_b, xi_noisy, scale_prior)
-        self.assertIn("pose", outputs)
-        self.assertIn("uncertainty", outputs)
-        self.assertEqual(outputs["pose"].shape, (2, 6))
-        self.assertEqual(outputs["uncertainty"].shape, (2, 6))
+        delta_xi, delta_scale, unc_pose, unc_scale = refiner(img_a, img_b, xi_noisy)
+        
+        self.assertEqual(delta_xi.shape, (2, 6))
+        self.assertEqual(delta_scale.shape, (2, 1))
+        self.assertEqual(unc_pose.shape, (2, 6))
+        self.assertEqual(unc_scale.shape, (2, 1))
         
         state_dict = refiner.state_dict()
         compiled_state_dict = {f"_orig_mod.{k}": v for k, v in state_dict.items()}
@@ -215,14 +205,16 @@ class TestLepauteCoreArchitecture(unittest.TestCase):
 
     def test_manifold_kinematic_forecaster(self):
         forecaster = ManifoldKinematicForecaster()
-        xi_t1 = np.array([0.0] * 6, dtype=np.float32)
-        xi_t2 = np.array([0.1] * 6, dtype=np.float32)
+        measured_pose = np.eye(4)
+        delta_xi = np.zeros(6, dtype=np.float32)
+        delta_scale = 1.05
         
-        forecaster.update(xi_t1, timestamp=1.0)
-        forecaster.update(xi_t2, timestamp=2.0)
+        forecaster.update_state(measured_pose, delta_xi, delta_scale, timestamp=1.0)
+        predicted_pose, predicted_scale = forecaster.predict(timestamp=2.0)
         
-        xi_predicted = forecaster.predict_next(xi_t2, dt=1.0)
-        self.assertEqual(xi_predicted.shape, (6, ))
+        self.assertEqual(predicted_pose.shape, (4, 4))
+        self.assertIsInstance(predicted_scale, float)
+        self.assertGreater(predicted_scale, 1.0)
 
     def test_train_sequence_loop_execution(self):
         img = np.zeros((64, 64, 3), dtype=np.uint8)
@@ -233,7 +225,7 @@ class TestLepauteCoreArchitecture(unittest.TestCase):
         
         train_ds = EquivariantDataset(mock_data, self.config)
         val_ds = EquivariantDataset(mock_data, self.config)
-        refiner = SE3ResidualRefiner(self.config)
+        refiner = SE3ResidualRefiner(config=self.config)
         
         orig_dataloader_init = DataLoader.__init__
         def safe_dataloader_init(self, dataset, batch_size=1, shuffle=False, *args, **kwargs):
@@ -255,6 +247,67 @@ class TestLepauteCoreArchitecture(unittest.TestCase):
             
             self.assertIsInstance(train_loss, float)
             self.assertIsInstance(val_loss, float)
+            
+    def test_integration_moving_sequence(self):
+        tracker = MonocularDirectTracker(self.config)
+        
+        base_img = np.zeros((64, 64, 3), dtype=np.uint8)
+        frames = []
+        for i in range(5):
+            img = base_img.copy()
+            cv2.rectangle(img, (20 + i*2, 20), (40 + i*2, 40), (255, 255, 255), -1)
+            frames.append(img)
+            
+        cumulative_xi = np.zeros(6)
+        for i in range(1, len(frames)):
+            xi, score = tracker.track(frames[i-1], frames[i], scale_prior=1.0)
+            cumulative_xi += xi
+            
+        self.assertNotEqual(cumulative_xi[0], 0.0)
+
+    @patch('main.cv2.imshow')
+    @patch('main.cv2.waitKey', return_value=-1)
+    def test_benchmark_performance_modes(self, mock_wait, mock_imshow):
+        from main import run_pipeline
+        
+        self.config.performance_mode = PerformanceMode.LOW
+        start_low = time.time()
+        res_low = run_pipeline(self.config, display_mode=DisplayMode.HEADLESS, unlimited=False, save_json=False, mock=True)
+        time_low = time.time() - start_low
+        
+        self.config.performance_mode = PerformanceMode.HIGH
+        start_high = time.time()
+        res_high = run_pipeline(self.config, display_mode=DisplayMode.HEADLESS, unlimited=False, save_json=False, mock=True)
+        time_high = time.time() - start_high
+        
+        self.assertTrue(len(res_low) > 0)
+        self.assertTrue(len(res_high) > 0)
+        
+        self.assertGreater(time_low, time_high)
+
+    def test_long_duration_drift(self):
+        forecaster = ManifoldKinematicForecaster()
+        
+        current_pose = np.eye(4)
+        for i in range(100):
+            noisy_delta_xi = np.random.normal(0, 1e-4, 6).astype(np.float32)
+            noisy_delta_scale = max(0.99, min(1.01, 1.0 + np.random.normal(0, 1e-4)))
+            
+            forecaster.update_state(
+                measured_pose=current_pose, 
+                delta_xi=noisy_delta_xi, 
+                delta_scale=noisy_delta_scale, 
+                timestamp=float(i) * 0.033, 
+                weight=0.5
+            )
+            
+            predicted_pose, predicted_scale = forecaster.predict(float(i+1) * 0.033)
+            current_pose = predicted_pose
+            
+        final_xi = se3_log_map(torch.from_numpy(current_pose).unsqueeze(0).float())
+        
+        self.assertTrue(torch.all(torch.abs(final_xi) < 0.1).item())
+        self.assertAlmostEqual(forecaster.get_scale(), 1.0, places=1)
 
 if __name__ == "__main__":
     unittest.main()
