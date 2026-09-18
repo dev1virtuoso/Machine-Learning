@@ -147,6 +147,88 @@ python train.py \
 
 The trainer supports resume via `--resume_mode resume|scratch|ask` and automatically handles train/test splits when the corresponding subdirectories exist.
 
+### Benchmarking and CI Stress Testing (`benchmark.py`)
+
+The framework includes a dedicated benchmark suite (`benchmark.py`) for deterministic stress testing, geometric stability validation, latency profiling, and CI integration. It evaluates the `SE3ResidualRefiner` under controlled image perturbations and reports mean geometric MSE, mode arbitration statistics, and per-module latency.
+
+#### High-Level Workflow
+
+The benchmark executes five sequential stages:
+
+1. **Deterministic Environment Setup** – Locks random seeds, resolves the target device (CPU / CUDA / MPS), and enforces reproducibility flags.
+2. **SE(3) Boundary Condition Tests** – Verifies numerical stability of `se3_exp_map` / `se3_log_map` near \(\pi\) rotations and sub-pixel micro-angles.
+3. **Data Ingestion & Perturbation** – Loads transition frames from the SQLite database and applies a severity-controlled Albumentations pipeline (Gaussian noise, motion blur, brightness/contrast).
+4. **Inference & Stress Loop** – Runs the residual refiner on every frame, records MSE against ground-truth Lie parameters, classifies fusion mode (`refined` / `tracker` / `recovery`), and profiles latency.
+5. **Report Generation** – Produces a JSON report containing model SHA-256 hash, environment metadata, aggregated metrics, and latency statistics. Suitable for CI artifact upload.
+
+#### Command-Line Usage
+
+```bash
+python benchmark.py [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `-d`, `--device` | `str` | `both` | Compute target: `cpu`, `gpu` (auto-detect CUDA/MPS), `cuda`, `mps`, or `both` (runs CPU then GPU sequentially). |
+| `-p`, `--perf` | `str` | `high` | `LepauteConfig` performance profile: `low`, `medium`, or `high`. |
+| `-db`, `--db` | `str` | `lepaute_data.db` | Path to the SQLite sequence transition database. |
+| `-s`, `--severity` | `float` | `1.5` | Perturbation degradation severity factor (controls noise std and motion-blur kernel size). |
+| `-o`, `--output` | `str` | `benchmark_report.json` | Output path for the generated JSON report. When `--device both` is used, device suffixes are automatically appended (`_cpu`, `_gpu`). |
+| `-m`, `--model-path` | `str` | `lepaute_refiner.onnx` | Path to the model artifact whose SHA-256 hash will be bound into the report. |
+| `-n`, `--limit` | `int` | `None` | Maximum number of frames to process (useful for quick smoke tests). |
+| `--seed` | `int` | `42` | Deterministic random seed lock for reproducibility. |
+
+#### Example Invocations
+
+```bash
+# Full two-stage (CPU + GPU) stress test with default settings
+python benchmark.py
+
+# CPU-only run with reduced severity and frame limit
+python benchmark.py -d cpu -s 0.8 -n 200 -o cpu_smoke.json
+
+# High-severity GPU benchmark using a custom database and model
+python benchmark.py \
+  -d gpu \
+  -p high \
+  -db ./datasets/stress_sequences.db \
+  -s 2.0 \
+  -m ./checkpoints/best_model.pth \
+  -o gpu_stress_report.json
+```
+
+#### Report Contents
+
+The generated JSON contains:
+
+- `ci_timestamp` – Unix timestamp of the run.
+- `model_version_hash` – SHA-256 of the supplied model artifact (or `"N/A"`).
+- `environment` – Selected device and performance mode.
+- `metrics` – Mean geometric MSE and boundary-test results (`pi_angle_mse`, `tiny_angle_mse`).
+- `latency_profiling_ms` – Per-module mean and max latency (currently focused on `SE3ResidualRefiner_Inference`).
+- `mode_arbitration` – Counts of frames classified as deep-learning refined, direct-alignment tracker, or ORB kinematic recovery.
+
+#### Programmatic Usage
+
+```python
+from pipeline_and_config import LepauteConfig, PerformanceMode
+from models import SE3ResidualRefiner
+from benchmark import LepauteBenchmark
+
+config = LepauteConfig(performance_mode=PerformanceMode.HIGH)
+refiner = SE3ResidualRefiner(config, feature_dim=256, max_resolution=64)
+benchmark = LepauteBenchmark(config)
+
+# Single-device pass
+report = benchmark.run_single_pass(
+    refiner_model=refiner,
+    target_device="cuda",
+    args=...  # argparse.Namespace or equivalent
+)
+```
+
+The suite automatically creates an empty SQLite schema if the supplied database does not exist, ensuring the benchmark can be run safely in fresh CI environments.
+
 ### Embedding Individual Subsystems
 
 Developers may also import and use isolated components:
