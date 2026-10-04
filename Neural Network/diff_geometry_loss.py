@@ -252,12 +252,10 @@ if __name__ == "__main__":
     rotated_pts = rotor_layer(pts_3d)
     print(f"[Clifford Rotor Layer Output Shape]: {rotated_pts.shape}")
 
-    # 5. Direction 2: 1D Sliced Wasserstein Loss
     ot_criterion = Wasserstein1DLoss(num_projections=32)
     loss_ot = ot_criterion(z_pred, z_gt)
     print(f"[1D Sliced Wasserstein Loss]: {loss_ot.item():.4f}")
 
-    # 6. Direction 3: TDA Persistence Loss
     tda_criterion = DifferentiableVR0PersistenceLoss(target_clusters=2)
     cloud = torch.randn(20, 3, requires_grad=True)
     loss_tda = tda_criterion(cloud)
