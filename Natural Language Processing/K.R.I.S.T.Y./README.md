@@ -74,7 +74,7 @@ This version focused on symbolic computation and exact mathematical reasoning, d
 
 ### A.R.I.E.L. v2.0 (2022–2023): Technical Details
 
-This update marked the first introduction of neural network models into the main development path, pioneering early retrieval-augmented generation concepts.
+This update marked the first introduction of neural network models into the main development path.
 
 - **Core Paradigm**: BiGRU Encoder + UniGRU Decoder Seq2Seq model with rule integration.
 - **Hallucination Risk Control**: Introduced a **Rational Gate**—a 2-layer MLP accepting the final encoder hidden state to output a risk score between 0 and 1, enforcing hard refusals above 0.6.
@@ -145,10 +145,10 @@ The architecture is structured across modular layers to ensure scalability and c
    - GPU recommended for neural inference and simulation pipelines.
 
 2. **Setup**:
-   ```bash
-   git clone [https://github.com/dev1virtuoso/Machine-Learning.git](https://github.com/dev1virtuoso/Machine-Learning.git)
-   cd Machine-Learning/Natural Language Processing/K.R.I.S.T.Y.
-   pip install -r requirements.txt
+```bash
+git clone [https://github.com/dev1virtuoso/Machine-Learning.git](https://github.com/dev1virtuoso/Machine-Learning.git)
+cd Machine-Learning/Natural Language Processing/K.R.I.S.T.Y.
+pip install -r requirements.txt
 
 ```
 
