@@ -124,7 +124,7 @@ class InferenceWorker:
                 
             latest_resolved_id = max(self.history_buffer.keys())
             state = self.history_buffer.pop(latest_resolved_id)
-
+            
             obsolete_keys = [k for k in list(self.history_buffer.keys()) if k <= latest_resolved_id]
             for k in obsolete_keys:
                 self.history_buffer.pop(k, None)
@@ -134,7 +134,7 @@ class InferenceWorker:
     def stop(self):
             logger.info("[InferenceWorker] Stop command received. Halting background process...")
             self.running_event.clear()
-            
+
             while not self.job_queue.empty():
                 try:
                     self.job_queue.get_nowait()
@@ -284,7 +284,7 @@ def process_frame(
             
         mode = "Refined"
         applied_scale = scale_prior * delta_scale_val
-    elif track_score >= 0.1:
+    elif track_score >= 0.05:
         best_rel_xi = tracker_xi_rel
         mode = "Tracker"
         applied_scale = scale_prior

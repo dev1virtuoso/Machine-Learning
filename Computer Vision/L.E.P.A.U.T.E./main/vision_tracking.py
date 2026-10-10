@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 from globals import logger, mps_safe
 from pipeline_and_config import LepauteConfig
-from geometry import se3_exp_map, se3_log_map
+from geometry import se3_exp_map, se3_log_map, has_c_optimization, lm_refine_pose_pyramid
 from ultralytics import YOLO
 
 class MonocularDirectTracker:
@@ -73,7 +73,7 @@ class MonocularDirectTracker:
             return np.eye(4), False
             
         _, R, t, mask_pose = cv2.recoverPose(E, pts_cur, pts_ref, cameraMatrix=self.intrinsic_matrix, mask=mask)
-
+        
         t_scaled = t.flatten() * self.dynamic_scale_prior
         
         T_rel = np.eye(4)
@@ -98,7 +98,41 @@ class MonocularDirectTracker:
 
         gray_a = cv2.cvtColor(img_a, cv2.COLOR_RGB2GRAY) if len(img_a.shape) == 3 else img_a
         gray_b = cv2.cvtColor(img_b, cv2.COLOR_RGB2GRAY) if len(img_b.shape) == 3 else img_b
-        
+
+        if has_c_optimization():
+            try:
+                xi_c, score_c = lm_refine_pose_pyramid(
+                    np.ascontiguousarray(gray_a, dtype=np.uint8),
+                    np.ascontiguousarray(gray_b, dtype=np.uint8),
+                    self.config.fx, self.config.fy,
+                    self.config.cx, self.config.cy,
+                    num_levels=self.config.pyramid_levels,
+                    max_iters=getattr(self.config, "gn_max_iter", 10),
+                    scale_prior=scale_prior,
+                    min_grad_thresh=5.0,
+                )
+                logger.info(
+                    f"[MonocularDirectTracker] C-LM raw | score={score_c:.6f} "
+                    f"| xi={np.array2string(xi_c, precision=3)}"
+                )
+                if score_c > 0.02 and np.all(np.isfinite(xi_c)):
+                    return xi_c, float(np.clip(score_c, 0.0, 0.95))
+                logger.warning(
+                    f"[MonocularDirectTracker] C-LM score too low ({score_c:.6f}), fallback"
+                )
+            except Exception as e:
+                logger.warning(f"[MonocularDirectTracker] C path failed, fallback: {e}")
+
+        return self._track_pytorch(gray_a, gray_b, img_a, img_b, scale_prior)
+
+    def _track_pytorch(
+        self,
+        gray_a: np.ndarray,
+        gray_b: np.ndarray,
+        img_a: np.ndarray,
+        img_b: np.ndarray,
+        scale_prior: float,
+    ) -> Tuple[np.ndarray, float]:
         xi = torch.zeros(6, dtype=torch.float32, device=self.device)
         tracking_successful = False
         final_score = 0.0
@@ -109,84 +143,84 @@ class MonocularDirectTracker:
             try:
                 t_a = torch.from_numpy(gray_a).to(dtype=torch.float32, device=self.device)
                 t_b = torch.from_numpy(gray_b).to(dtype=torch.float32, device=self.device)
-                
+
                 pyr_a = self._build_pyramid(t_a)
                 pyr_b = self._build_pyramid(t_b)
-                
-                base_max_iter = getattr(self.config, 'gn_max_iter', 10)
+
+                base_max_iter = getattr(self.config, "gn_max_iter", 10)
 
                 for lvl in reversed(range(self.config.pyramid_levels)):
                     img_lvl_a = pyr_a[lvl]
                     img_lvl_b = pyr_b[lvl]
                     h, w = img_lvl_a.shape
-                    
+
                     scale_factor = 1.0 / (2.0 ** lvl)
                     fx_l = self.config.fx * scale_factor
                     fy_l = self.config.fy * scale_factor
                     cx_l = self.config.cx * scale_factor
                     cy_l = self.config.cy * scale_factor
-                    
+
                     img_b_batch = img_lvl_b.unsqueeze(0).unsqueeze(0)
                     gx = F.conv2d(img_b_batch, self.kx, padding=1).squeeze(0).squeeze(0)
                     gy = F.conv2d(img_b_batch, self.ky, padding=1).squeeze(0).squeeze(0)
-                    
+
                     v_coords, u_coords = torch.meshgrid(
-                        torch.arange(h, device=self.device), 
-                        torch.arange(w, device=self.device), 
-                        indexing='ij'
+                        torch.arange(h, device=self.device),
+                        torch.arange(w, device=self.device),
+                        indexing="ij",
                     )
-                    
+
                     level_max_iter = max(4, base_max_iter - lvl * 2)
 
                     for iter_idx in range(level_max_iter):
                         tx, ty, tz = xi[0], xi[1], xi[2]
                         wx, wy, wz = xi[3], xi[4], xi[5]
-                        
+
                         Z = torch.full_like(u_coords, max(scale_prior, 0.1), dtype=torch.float32)
                         X = (u_coords - cx_l) / fx_l * Z
                         Y = (v_coords - cy_l) / fy_l * Z
-                        
+
                         X_prime = X + (wz * Y - wy * Z) + tx
                         Y_prime = Y + (-wz * X + wx * Z) + ty
                         Z_prime = Z + (wy * X - wx * Y) + tz
                         Z_prime = torch.clamp(Z_prime, min=1e-4)
-                        
+
                         u_prime = (X_prime / Z_prime) * fx_l + cx_l
                         v_prime = (Y_prime / Z_prime) * fy_l + cy_l
-                        
+
                         valid_mask = ((u_prime >= 0) & (u_prime < w - 1) & (v_prime >= 0) & (v_prime < h - 1)).float()
-                            
+
                         u_norm = (u_prime / (w - 1)) * 2.0 - 1.0
                         v_norm = (v_prime / (h - 1)) * 2.0 - 1.0
-                        
+
                         u_norm = torch.clamp(u_norm, min=-2.0, max=2.0)
                         v_norm = torch.clamp(v_norm, min=-2.0, max=2.0)
                         u_norm = torch.where(torch.isnan(u_norm) | torch.isinf(u_norm), torch.zeros_like(u_norm), u_norm)
                         v_norm = torch.where(torch.isnan(v_norm) | torch.isinf(v_norm), torch.zeros_like(v_norm), v_norm)
-                        
+
                         grid = torch.stack((u_norm, v_norm), dim=-1).unsqueeze(0)
-                        
-                        warped_b = F.grid_sample(img_b_batch, grid, align_corners=True, mode='bilinear').squeeze(0).squeeze(0)
-                        warped_gx = F.grid_sample(gx.unsqueeze(0).unsqueeze(0), grid, align_corners=True, mode='bilinear').squeeze(0).squeeze(0)
-                        warped_gy = F.grid_sample(gy.unsqueeze(0).unsqueeze(0), grid, align_corners=True, mode='bilinear').squeeze(0).squeeze(0)
-                        
+
+                        warped_b = F.grid_sample(img_b_batch, grid, align_corners=True, mode="bilinear").squeeze(0).squeeze(0)
+                        warped_gx = F.grid_sample(gx.unsqueeze(0).unsqueeze(0), grid, align_corners=True, mode="bilinear").squeeze(0).squeeze(0)
+                        warped_gy = F.grid_sample(gy.unsqueeze(0).unsqueeze(0), grid, align_corners=True, mode="bilinear").squeeze(0).squeeze(0)
+
                         residuals = warped_b - img_lvl_a
-                        
+
                         inv_z = 1.0 / Z_prime
                         inv_z2 = inv_z * inv_z
-                        
+
                         du_dX = fx_l * inv_z
                         du_dY = torch.zeros_like(inv_z)
                         du_dZ = -fx_l * X_prime * inv_z2
-                        
+
                         dv_dX = torch.zeros_like(inv_z)
                         dv_dY = fy_l * inv_z
                         dv_dZ = -fy_l * Y_prime * inv_z2
-                        
+
                         J_X = warped_gx * du_dX + warped_gy * dv_dX
                         J_Y = warped_gx * du_dY + warped_gy * dv_dY
                         J_Z = warped_gx * du_dZ + warped_gy * dv_dZ
-                        
+
                         J = torch.zeros((h, w, 6), dtype=torch.float32, device=self.device)
                         J[..., 0] = J_X
                         J[..., 1] = J_Y
@@ -194,29 +228,29 @@ class MonocularDirectTracker:
                         J[..., 3] = -J_Y * Z_prime + J_Z * Y_prime
                         J[..., 4] =  J_X * Z_prime - J_Z * X_prime
                         J[..., 5] = -J_X * Y_prime + J_Y * X_prime
-                        
+
                         J_masked = J * valid_mask.unsqueeze(-1)
                         r_masked = residuals * valid_mask
-                        
+
                         J_flat = J_masked.view(-1, 6)
                         r_flat = r_masked.view(-1)
-                        
+
                         H = torch.matmul(J_flat.T, J_flat)
                         b = -torch.matmul(J_flat.T, r_flat)
-                        
+
                         H += 1e-4 * torch.eye(6, dtype=torch.float32, device=self.device)
-                        
+
                         try:
                             delta_xi = torch.linalg.solve(H, b)
                         except torch.linalg.LinAlgError:
                             break
-                            
+
                         delta_xi = torch.where(torch.isfinite(delta_xi), delta_xi, torch.zeros_like(delta_xi))
                         xi += delta_xi
-                        
+
                         if torch.linalg.norm(delta_xi) < 1e-4:
                             break
-                            
+
                 if residuals is not None and valid_mask is not None:
                     valid_count = valid_mask.sum()
                     if valid_count.item() > 16:
@@ -227,23 +261,23 @@ class MonocularDirectTracker:
                         final_score = 0.0
                 else:
                     final_score = 0.0
-                    
+
                 if np.isfinite(final_score) and torch.norm(xi).item() > 0:
                     tracking_successful = True
-                
+
                 xi_np = xi.cpu().numpy()
-                    
+
             except Exception as alignment_exception:
                 logger.warning(f"[MonocularDirectTracker] PyTorch tracking aborted: {alignment_exception}. Escalating to fallback.")
                 xi_np = np.zeros(6, dtype=np.float32)
 
-        enable_orb = getattr(self.config, 'enable_orb_fallback', True)
+        enable_orb = getattr(self.config, "enable_orb_fallback", True)
         if (not tracking_successful or enable_orb) and final_score < 0.15:
             xi_fallback, fallback_score = self._execute_orb_pnp_fallback(img_a, img_b, scale_prior)
             if fallback_score > 0.05 or not tracking_successful:
                 xi_np = xi_fallback
                 final_score = fallback_score
-                
+
         if not np.all(np.isfinite(xi_np)):
             xi_np = np.zeros(6, dtype=np.float32)
 

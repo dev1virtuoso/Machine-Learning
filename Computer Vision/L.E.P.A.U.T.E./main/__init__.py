@@ -1,4 +1,4 @@
-from main import run_pipeline
+from .main import run_pipeline, InferenceWorker, GracefulShutdownHandler
 from geometry import (
     skew_symmetric,
     se3_exp_map,
@@ -29,6 +29,8 @@ from pipeline_and_config import (
 
 __all__ = [
     "run_pipeline",
+    "InferenceWorker",
+    "GracefulShutdownHandler",
     "LepauteConfig",
     "DisplayMode",
     "PerformanceMode",

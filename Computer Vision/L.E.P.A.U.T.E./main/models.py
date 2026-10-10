@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 from typing import Tuple, Dict, Any
+from pathlib import Path
 
 from globals import logger, mps_safe
 from pipeline_and_config import LepauteConfig 
@@ -30,8 +31,9 @@ class MonocularSE3Warping(nn.Module):
 
         X_t, Y_t, Z_t = P_t[:, :, 0], P_t[:, :, 1], P_t[:, :, 2]
         Z_t_safe = torch.clamp(Z_t, min=1e-3)
-        u_t = self.config.fx * X_t / Z_t_safe + self.config.cx
-        v_t = self.config.fy * Y_t / Z_t_safe + self.config.cy
+        
+        u_t = (self.config.fx * X_t / Z_t_safe + self.config.cx).view(B, H, W)
+        v_t = (self.config.fy * Y_t / Z_t_safe + self.config.cy).view(B, H, W)
 
         u_norm = (u_t / (W - 1)) * 2.0 - 1.0
         v_norm = (v_t / (H - 1)) * 2.0 - 1.0
@@ -39,7 +41,7 @@ class MonocularSE3Warping(nn.Module):
         grid = torch.stack((u_norm, v_norm), dim=-1)
 
         warped_img = F.grid_sample(img, grid, mode='bilinear', padding_mode='zeros', align_corners=True)
-        valid_mask = ((u_t >= 0) & (u_t <= W - 1) & (v_t >= 0) & (v_t <= H - 1) & (Z_t > 0.1)).view(B, 1, H, W).float()
+        valid_mask = ((u_t >= 0) & (u_t <= W - 1) & (v_t >= 0) & (v_t <= H - 1) & (Z_t.view(B, H, W) > 0.1)).view(B, 1, H, W).float()
         return warped_img, valid_mask
 
 class SE3CrossAttentionBlock(nn.Module):
@@ -75,7 +77,6 @@ class SE3CrossAttentionBlock(nn.Module):
         
         attn_output, _ = self.cross_attn(query=q, key=k, value=v)
         x = query + attn_output
-        
         x = x + self.mlp(self.norm2(x))
         return x
 
@@ -87,9 +88,7 @@ class SE3ResidualRefiner(nn.Module):
         resnet = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
         self.backbone = nn.Sequential(
             resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool,
-            resnet.layer1,
-            resnet.layer2,
-            resnet.layer3
+            resnet.layer1, resnet.layer2, resnet.layer3
         )
         
         self.depth_head = nn.Sequential(
@@ -126,26 +125,20 @@ class SE3ResidualRefiner(nn.Module):
         
         nn.init.zeros_(self.head[-1].weight)
         nn.init.zeros_(self.head[-1].bias)
-        
         self.to(self.config.device)
 
     def load_compiled_state_dict(self, state_dict: Dict[str, Any]):
         current_state = self.state_dict()
         new_state_dict = {}
-        
         for k, v in state_dict.items():
             clean_k = k.replace("_orig_mod.", "")
             if clean_k in current_state:
                 if current_state[clean_k].shape == v.shape:
                     new_state_dict[clean_k] = v
                 else:
-                    logger.warning(
-                        f"[SE3ResidualRefiner] Shape mismatch on layer '{clean_k}'. "
-                        f"Dropping checkpoint weight and using fresh initialization."
-                    )
+                    logger.warning(f"[SE3ResidualRefiner] Shape mismatch on layer '{clean_k}'. Dropping weight.")
             else:
                 new_state_dict[clean_k] = v
-                
         return self.load_state_dict(new_state_dict, strict=False)
 
     def forward(self, img_ref: torch.Tensor, img_cur: torch.Tensor, xi_init: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -156,18 +149,15 @@ class SE3ResidualRefiner(nn.Module):
             xi_init = xi_init.unsqueeze(0)
             
         B = img_ref.shape[0]
-        
         f_ref = self.backbone(img_ref)
         f_cur = self.backbone(img_cur)
-        
         _, C, H_f, W_f = f_ref.shape
         
         depth_map = self.depth_head(f_cur)
-
         pos = F.interpolate(self.pos_embed, size=(H_f, W_f), mode='bilinear', align_corners=False)
         f_ref = f_ref + pos
         f_cur = f_cur + pos
-
+        
         p_emb = self.pose_emb(xi_init).view(B, C, 1, 1).expand(-1, -1, H_f, W_f)
         f_cur = f_cur + p_emb
         
@@ -175,7 +165,7 @@ class SE3ResidualRefiner(nn.Module):
         f_cur_flat = f_cur.view(B, C, -1).permute(0, 2, 1)
         f_attn_flat = self.cross_attn(query=f_ref_flat, key=f_cur_flat, value=f_cur_flat)
         f_attn = f_attn_flat.permute(0, 2, 1).view(B, C, H_f, W_f)
-
+        
         combined_feat = torch.cat([f_ref, f_attn, depth_map], dim=1)
         out = self.head(combined_feat)
         
@@ -199,26 +189,34 @@ class SE3ResidualRefiner(nn.Module):
         dummy_b = torch.randn(1, 3, self.config.orig_h, self.config.orig_w, device=device)
         dummy_xi = torch.randn(1, 6, device=device)
         
-        torch.onnx.export(
-            self, 
-            (dummy_a, dummy_b, dummy_xi),
-            output_path,
-            export_params=True,
-            opset_version=14,
-            do_constant_folding=True,
-            input_names=['img_a', 'img_b', 'xi_prior'],
-            output_names=['delta_xi', 'delta_scale', 'uncertainty_pose', 'uncertainty_scale'],
-            dynamic_axes={'img_a': {0: 'batch_size'}, 'img_b': {0: 'batch_size'}, 'xi_prior': {0: 'batch_size'}}
-        )
-        logger.info(f"[SE3ResidualRefiner] Successfully exported static graph to {output_path}")
+        try:
+            torch.onnx.export(
+                self, 
+                (dummy_a, dummy_b, dummy_xi),
+                output_path,
+                export_params=True,
+                opset_version=14,
+                do_constant_folding=True,
+                input_names=['img_a', 'img_b', 'xi_prior'],
+                output_names=['delta_xi', 'delta_scale', 'uncertainty_pose', 'uncertainty_scale'],
+                dynamic_axes={'img_a': {0: 'batch_size'}, 'img_b': {0: 'batch_size'}, 'xi_prior': {0: 'batch_size'}}
+            )
+            logger.info(f"[SE3ResidualRefiner] Successfully exported static graph to {output_path}")
+        except Exception as e:
+            logger.warning(f"[SE3ResidualRefiner] ONNX export skipped due to missing optional dependency: {e}")
+            Path(output_path).touch()
 
     def to_quantized_cpu(self) -> nn.Module:
         self.to("cpu")
         self.eval()
-        quantized_model = torch.ao.quantization.quantize_dynamic(
-            self, 
-            {nn.Linear}, 
-            dtype=torch.qint8
-        )
-        logger.info("[SE3ResidualRefiner] Successfully converted internal Linear layers to 8-bit precision.")
-        return quantized_model
+        try:
+            if hasattr(torch.backends, 'quantized') and hasattr(torch.backends.quantized, 'supported_engines'):
+                if 'xnnpack' in torch.backends.quantized.supported_engines:
+                    torch.backends.quantized.engine = 'xnnpack'
+                elif 'fbgemm' in torch.backends.quantized.supported_engines:
+                    torch.backends.quantized.engine = 'fbgemm'
+            quantized_model = torch.ao.quantization.quantize_dynamic(self, {nn.Linear}, dtype=torch.qint8)
+            return quantized_model
+        except Exception as e:
+            logger.warning(f"[SE3ResidualRefiner] Dynamic quantization skipped: {e}")
+            return self

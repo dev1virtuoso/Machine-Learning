@@ -2,229 +2,216 @@
 
 ## 1. Overview
 
-The L.E.P.A.U.T.E. Framework provides a monocular SE(3) perception pipeline for real-time camera ego-motion estimation, object classification, and relative pose tracking. All entry points are invoked directly through Python. Configuration is managed via `LepauteConfig`, optional external JSON files for camera intrinsics and object scale priors, and command-line arguments.
+L.E.P.A.U.T.E. provides two deployment paths that share the same C geometry and photometric optimization core.
 
-Core entry points:
-- `main.py` — online perception pipeline
-- `train.py` — offline training of the SE(3) Residual Refiner
-- `convert_bop_to_lepaute.py` — BOP dataset conversion
-- Programmatic API via `run_pipeline` and `LepauteConfig`
+- **Standard version** (`main/`): Python pipeline with dense direct tracking, residual refinement network, object classification, and trajectory fusion. Suitable for research and desktop use.
+- **MCU version** (`mcu/`): Pure-C thin wrapper around the shared core, designed for static-memory embedded targets.
+
+Both versions call the identical SE(3) and Levenberg-Marquardt kernels. The standard version loads the shared library through ctypes; the MCU version links it at compile time under the `LEPAUTE_STATIC_MEM` flag.
 
 ## 2. Install Requirements
 
-Install dependencies from the provided requirements file:
+### Shared C Core
+
+Build the core library once; both front-ends consume it.
 
 ```bash
-pip install -r requirements.txt
+cd core
+mkdir -p build && cd build
+cmake ..
+make
 ```
 
-Ensure a compatible PyTorch installation matching your hardware (CUDA, MPS, or CPU). YOLO weights (`yolov8n.pt`) are downloaded automatically on first use by Ultralytics.
+The resulting shared object (`liblepaute_core.so` / `.dylib` / `.dll`) is expected under `core/build/` or `core/`. The Python geometry module searches these locations automatically.
 
-## Dataset Preparation
-
-A pre-converted LEPAUTE dataset is available at:
-
-[https://huggingface.co/datasets/dev1virtuoso/lepaute-dataset](dev1virtuoso/lepaute-dataset)
-
-Alternatively, prepare the dataset from the original BOP source:
-
-1. Download the YCB-V dataset from the Hugging Face BOP benchmark:
+### Standard Version (Python)
 
 ```bash
-python ycb-v_download.py
+# Recommended Python 3.10+
+pip install torch torchvision
+pip install opencv-python numpy pydantic pydantic-settings
+pip install albumentations ultralytics safetensors tqdm
 ```
 
-2. Extract the downloaded `.zip` files located under `./bop_datasets/ycbv`.
+Optional but recommended for accelerated tracking:
 
-3. Convert the extracted data into the monocular LEPAUTE format (computes exact SE(3) relative poses):
+- CUDA-capable GPU or Apple Silicon (MPS)
+- Compiled `liblepaute_core` (see above)
+
+Place a trained residual-refiner checkpoint at `main/checkpoints/best_model.pth` if residual refinement is required. YOLO weights (`yolov8n.pt`) are loaded automatically by the classification module.
+
+### MCU Version (C)
 
 ```bash
-python convert_bop_to_lepaute.py \
-  --bop_dir ./dataset/bop_datasets/ycbv \
-  --output_dir ./dataset/lepaute_dataset \
-  --splits train_pbr train_real \
-  --stride 1 \
-  --workers 8
+cd mcu
+mkdir -p build && cd build
+cmake -DLEPAUTE_STATIC_MEM=ON -DCMAKE_BUILD_TYPE=Release ..
+make
 ```
 
-### Conversion Arguments
-
-| Argument | Default | Description |
-|---|---|---|
-| `--bop_dir` | Required | Path to the downloaded BOP dataset root |
-| `--output_dir` | `./lepaute_dataset` | Destination for converted assets |
-| `--splits` | None | Space-separated splits to process (e.g. `train_pbr train_real`) |
-| `--stride` | `1` | Frame interval for relative-pose pair generation |
-| `--obj_ids` | None | Optional whitespace-separated object IDs to keep |
-| `--workers` | `4` | Parallel worker count |
-| `--scale` | `1000.0` | Translation normalization factor |
-
-## Model Training
-
-After obtaining or converting the dataset, train the SE(3) Residual Refiner:
-
-```bash
-python train.py \
-  --dataset_dir ./dataset/lepaute_dataset \
-  --checkpoint_dir ./checkpoints \
-  --epochs 50 \
-  --seed 42
-```
-
-### Training Arguments
-
-| Argument | Default | Description |
-|---|---|---|
-| `--dataset_dir` | Required | Root containing train/test manifests and images |
-| `--epochs` | `15` | Maximum training epochs |
-| `--checkpoint_dir` | `./checkpoints` | Directory for weight checkpoints |
-| `--device` | None | Force device (`cuda`, `mps`, or `cpu`) |
-| `--no_compile` | False | Disable `torch.compile` |
-| `--seed` | `42` | Random seed for reproducibility |
-| `--resume_mode` | `ask` | `resume`, `scratch`, or `ask` |
-
-The trainer automatically detects explicit `train/` and `test/` subdirectories or falls back to random splitting. Checkpoints are written as `latest_checkpoint.pth` and `best_model.pth`.
-
-## Running the Main Pipeline
-
-Launch the online perception system:
-
-```bash
-# Standard GUI
-python main.py --mode gui --perf medium
-
-# Detailed HUD + trajectory map
-python main.py --mode detailedgui --perf high
-
-# Headless (no display)
-python main.py --mode headless --perf low
-
-# Structured metric output only
-python main.py --mode json
-```
-
-### Main Pipeline Arguments
-
-| Argument | Default | Description |
-|---|---|---|
-| `--mode` | `gui` | `headless`, `gui`, `json`, or `detailedgui` |
-| `--perf` | `medium` | `low`, `medium`, or `high` (controls pyramid levels, Gauss-Newton iterations, and frame throttling) |
-| `--db` | None | Custom SQLite path for transition storage |
-| `--limit` | False | Cap execution at 50 frames (testing) |
-| `--log_level` | `general` | `general` (INFO) or `detailed` (DEBUG) |
-| `--no_save` | False | Disable SQLite persistence |
-
-## Programmatic Integration
-
-Bypass the CLI and embed the pipeline directly:
-
-```python
-from pipeline_and_config import LepauteConfig, DisplayMode
-from main import run_pipeline
-
-custom_config = LepauteConfig(
-    device="cuda:0",
-    fx=600.0,
-    fy=600.0,
-    cx=320.0,
-    cy=240.0,
-    object_names=["industrial_arm", "conveyor_belt", "target_widget"]
-)
-
-telemetry_results = run_pipeline(
-    config=custom_config,
-    display_mode=DisplayMode.HEADLESS,
-    unlimited=False,
-    save_json=False
-)
-
-for payload in telemetry_results:
-    print(f"Frame {payload['frame_id']} | Object: {payload['category']} | Pose: {payload['xi']}")
-```
-
-To inject custom video sources (ROS topics, RTSP, simulation buffers), subclass `CameraIOStream` and override `read()`. Frames must be returned as `(H, W, 3)` uint8 RGB arrays together with a metadata dictionary containing at least `timestamp` and `frame_id`.
+The MCU build requires only a C99 compiler, `libm`, and the shared core sources. No dynamic allocation is performed when `LEPAUTE_STATIC_MEM` is defined.
 
 ## Parameters That Must Be Set Manually
 
-Several values are environment- or hardware-specific and should be configured before production use.
+The following values are not inferred at runtime and should be adjusted for each camera or target platform.
 
 ### Camera Intrinsics
 
-Defaults are loaded from `camera_config.json` (or environment variable `LEPAUTE_CAMERA_CONFIG_PATH`). If the file is absent, the following fallbacks are used:
+| Parameter | Location | Description |
+|---|---|---|
+| `fx`, `fy` | `camera_config.json` or `LepauteConfig` / `lepaute_cfg_t.K` | Focal lengths in pixels |
+| `cx`, `cy` | same | Principal-point offsets |
 
-```json
-{
-  "fx": 250.0,
-  "fy": 250.0,
-  "cx": 160.0,
-  "cy": 120.0
-}
-```
-
-Override at construction time:
-
-```python
-config = LepauteConfig(fx=600.0, fy=600.0, cx=320.0, cy=240.0)
-```
-
-Incorrect intrinsics produce scale and pose drift.
+If `camera_config.json` is absent, the framework falls back to defaults (`fx=fy=250`, `cx=160`, `cy=120`). For production use, supply calibrated values matching the actual sensor resolution.
 
 ### Object Scale Priors
 
-Metric scale priors (meters) are loaded from `object_config.json` (or `LEPAUTE_OBJECT_CONFIG_PATH`). Default keys include:
+| Parameter | Location | Description |
+|---|---|---|
+| `object_scales` | `object_config.json` or `LepauteConfig.object_scales` | Metric depth priors (metres) keyed by object class |
 
-```json
-{
-  "table": 1.5,
-  "cup": 0.1,
-  "keyboard": 0.4,
-  "laptop": 0.35,
-  "mouse": 0.12,
-  "human": 1.7,
-  "background": 2.0
-}
+Monocular tracking uses these priors to resolve absolute scale. Incorrect values produce systematic translation bias.
+
+### Photometric Optimizer Settings
+
+| Parameter | Default (standard) | Default (MCU) | Notes |
+|---|---|---|---|
+| `num_levels` / `pyramid_levels` | 3 | 2–3 | Higher levels improve convergence but increase cost |
+| `max_iters_per_level` / `gn_max_iter` | 15 | 5–6 | Reduce on constrained devices |
+| `huber_delta` | 10.0 | 10.0 | Robust loss threshold |
+| `min_grad_thresh` | 25.0 (Python) / 5.0 (C) | 4.0–5.0 | Lower for low-texture scenes |
+| `initial_lm_lambda` | 1e-3 | 1e-3 | LM damping start value |
+| `scale_prior` | per-object | 1.0–1.2 | Constant depth used when no depth map is supplied |
+
+### Static-Memory Limits (MCU only)
+
+| Macro | Default | Purpose |
+|---|---|---|
+| `LEPAUTE_MAX_PYRAMID_LEVELS` | 8 | Maximum pyramid depth |
+| `LEPAUTE_MAX_IMAGE_PIXELS` | 320×240 | Maximum pixels per image in the static pool |
+
+Increase or decrease these macros according to available RAM before compiling the MCU binary.
+
+### Performance Mode (standard only)
+
+| Mode | Effect |
+|---|---|
+| `low` | Fewer pyramid levels, reduced iterations, frame-rate throttle |
+| `medium` | Default balance |
+| `high` | Extra pyramid level and more iterations |
+
+Set via `--perf low|medium|high` or by assigning `LepauteConfig.performance_mode`.
+
+## Standard Version Usage
+
+### Running the Live Pipeline
+
+```bash
+cd main
+python main.py --mode realtime --perf medium
 ```
 
-Add or edit entries to match the objects present in your scene. The classifier label is mapped directly to these priors for monocular depth projection.
+Common flags:
 
-### Compute Device
+| Flag | Description |
+|---|---|
+| `--mode headless\|gui\|realtime\|json\|detailedgui` | Output style |
+| `--perf low\|medium\|high` | Performance profile |
+| `--db PATH` | SQLite database path for transition storage |
+| `--limit` | Restrict run to 50 frames |
+| `--no_save` | Disable database writes |
+| `--log_level general\|detailed` | Logging verbosity |
 
-Automatically detected (`cuda` > `mps` > `cpu`). Force a specific device via:
+### Benchmarking
 
-```python
-config = LepauteConfig(device="cuda")
+```bash
+python benchmark.py -d both -p high -db lepaute_data.db -s 1.5 -n 200
 ```
 
-or the CLI flag `--device`.
+### Unit Tests
 
-### Performance Profile
+```bash
+python -m unittest test_module.py
+```
 
-`--perf low|medium|high` adjusts pyramid levels, Gauss-Newton iteration count, and optional frame-rate throttling. Choose according to available compute and required latency.
+## MCU Version Usage
 
-### Model Checkpoint Path
+### Demo Binary
 
-The inference worker loads `./checkpoints/best_model.pth` by default. Ensure a trained checkpoint exists at this location, or the refiner falls back to random initialization.
+After building:
 
-### SQLite Database Path
+```bash
+./lepaute_mcu_demo
+```
 
-Defaults to `lepaute_data.db`. Override with `--db` or `LepauteConfig(data_store=...)`.
+The supplied `main.c` generates a synthetic image pair, runs photometric refinement, and prints the recovered tangent vector and cost.
+
+### Integrating into Application Code
+
+```c
+#include "lepaute.h"
+
+lepaute_cfg_t cfg;
+lepaute_default_cfg(&cfg);
+
+/* Override for actual sensor */
+cfg.K.fx = 320.0f;
+cfg.K.fy = 320.0f;
+cfg.K.cx = 160.0f;
+cfg.K.cy = 120.0f;
+cfg.scale_prior = 1.0f;
+cfg.gn.num_levels = 2;
+cfg.gn.max_iters_per_level = 5;
+
+lepaute_se3_t T;
+lepaute_se3_identity(&T);
+
+double cost = lepaute_refine(ref_gray, cur_gray, width, height, &cfg, &T);
+
+double xi[6];
+lepaute_xi_from_se3(&T, xi);
+```
+
+`ref_gray` and `cur_gray` must be contiguous uint8 grayscale buffers of size `width * height`. The pose matrix `T` is updated in-place.
 
 ## 3. Troubleshooting
 
-**Thread blocking in asynchronous architectures**  
-Avoid high-frequency blocking polls of `get_latest_resolved_state()` inside `asyncio` or ROS spin loops. Pull the latest resolved state asynchronously relative to the worker queue to prevent stream starvation or UI lock-up.
+### C Library Not Found (Python)
 
-**VRAM leaks in custom execution loops**  
-When building loops outside `main.py`, detach intermediate SE(3) tensors produced by `se3_exp_map` and `se3_log_map` (`.detach().cpu().numpy()`) before storing or publishing them. Failure to detach retains the full computational graph and rapidly exhausts GPU memory.
+Symptom: log message “Native library not found – using pure PyTorch fallback”.
 
-**Concurrency collisions on Apple Silicon (MPS)**  
-Heavy main-thread work concurrent with the isolated `InferenceWorker` process can trigger Metal command-buffer crashes. Prefer the built-in CPU fallback, or wrap custom inference blocks with the provided `_mps_lock` / `mps_safe` context manager when forcing MPS execution.
+- Confirm `liblepaute_core` exists under `core/build/` or `core/`.
+- Rebuild the core with the correct platform extension (`.so`, `.dylib`, `.dll`).
+- Verify the search paths listed in `geometry.py` match the actual location.
 
-**Camera acquisition failures**  
-The capture thread attempts multiple platform-specific backends (AVFoundation, DSHOW, MSMF, V4L2). If connection repeatedly fails, verify device permissions and that no other process holds exclusive access to the camera. Mock mode (`mock=True`) can be used for offline testing.
+### High Final Cost / Tracking Failure
 
-**Empty or stalled job queue**  
-Under sustained high load the inference worker silently drops frames when the bounded queue (size 5) is full. Reduce input frame rate or lower the performance profile if drop counts become excessive.
+- Lower `min_grad_thresh` for low-texture environments.
+- Increase pyramid levels or iterations if motion is large.
+- Ensure camera intrinsics match the image resolution.
+- Supply a realistic `scale_prior` (or object-scale entry) for the scene.
 
-**Checkpoint loading shape mismatches**  
-When resuming training or loading a refined model, the `load_compiled_state_dict` method strips `_orig_mod.` prefixes and tolerates shape mismatches by falling back to fresh initialization for incompatible layers. Verify that the checkpoint was produced with the same `feature_dim` and `max_resolution` settings.
+### MCU Static-Memory Errors
+
+- Return codes `-2` / `-3` from pyramid creation indicate the static pool is exhausted or already occupied.
+- Reduce image resolution or lower `LEPAUTE_MAX_IMAGE_PIXELS` / `LEPAUTE_MAX_PYRAMID_LEVELS` and recompile.
+- Ensure only one pair of pyramids is live at a time (the pool supports two concurrent slots).
+
+### YOLO or Refiner Initialization Failure
+
+- Confirm `yolov8n.pt` is reachable and network access is available on first download.
+- Place a valid checkpoint at `main/checkpoints/best_model.pth`; absence falls back to random weights.
+- On Apple Silicon, ensure `PYTORCH_ENABLE_MPS_FALLBACK=1` is set (handled automatically by the config loader).
+
+### Process Hang on Shutdown
+
+- The pipeline uses a multi-stage signal handler. Press Ctrl+C once for graceful exit; repeated presses force `os._exit` if a native extension is blocked.
+- Verify the InferenceWorker heartbeat; a stalled worker triggers an automatic halt after the health-check interval.
+
+### Database Lock or Corruption
+
+- SequenceDataCollector uses SQLite WAL mode. On abnormal termination, run a manual checkpoint:
+  ```sql
+  PRAGMA wal_checkpoint(TRUNCATE);
+  ```
+- Avoid concurrent writers from external processes while the collector is active.

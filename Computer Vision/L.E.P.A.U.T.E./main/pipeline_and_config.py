@@ -117,7 +117,7 @@ def _load_dynamic_object_names() -> List[str]:
 class LepauteConfig(BaseSettings):
     device: str = Field(default_factory=_get_stable_compute_device)
     data_store: str = "lepaute_data.db"
-
+    
     performance_mode: PerformanceMode = PerformanceMode.MEDIUM
     
     object_names: List[str] = Field(default_factory=_load_dynamic_object_names)
@@ -244,7 +244,7 @@ class CameraIOStream:
                     self.stream_interrupted = False
                     self.reconnect_count += 1
                     restored = True
-            
+
             if frame_to_return is None:
                 logger.warning(f"[CameraIOStream] Frame buffer empty for ID: {self.frame_id}. Waiting for background thread...")
                 for _ in range(20):
@@ -684,7 +684,7 @@ def train_sequence_loop(
             scheduler.step(current_metric)
             
             save_checkpoint(epoch)
-
+            
             if current_metric < best_val_loss:
                 best_val_loss = current_metric
                 patience_counter = 0
