@@ -506,6 +506,14 @@ def validate_performance_mode(value: str) -> PerformanceMode:
         return PerformanceMode(value.lower())
     except ValueError:
         raise argparse.ArgumentTypeError(f"Invalid perf profile: '{value}'. Allowed values are: {[e.value for e in PerformanceMode]}")
+    
+def validate_device(value: str) -> str:
+    val = value.lower()
+    if val not in ("cpu", "cuda", "mps"):
+        raise argparse.ArgumentTypeError(
+            f"Invalid device: '{value}'. Allowed values are: cpu, cuda, mps"
+        )
+    return val
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -553,6 +561,14 @@ if __name__ == "__main__":
         action="store_true",
         help="Disable JSON database saving to reduce disk I/O bottleneck."
     )
+    
+    parser.add_argument(
+        "--device",
+        type=validate_device,
+        default="cpu",
+        choices=["cpu", "cuda", "mps"],
+        help="Compute device: cpu (default), cuda (NVIDIA GPU), mps (Apple Silicon GPU)"
+    )
 
     args = parser.parse_args()
 
@@ -565,6 +581,14 @@ if __name__ == "__main__":
     config = LepauteConfig(**config_kwargs)
     
     config.performance_mode = args.perf
+    config.device = args.device
+    
+    if args.device == "cuda" and not torch.cuda.is_available():
+        logger.warning("[System] CUDA requested but not available. Falling back to CPU.")
+        config.device = "cpu"
+    elif args.device == "mps" and not (hasattr(torch.backends, "mps") and torch.backends.mps.is_available()):
+        logger.warning("[System] MPS requested but not available. Falling back to CPU.")
+        config.device = "cpu"
 
     selected_log_level = logging.DEBUG if args.log_level == "detailed" else logging.INFO
 

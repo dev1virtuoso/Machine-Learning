@@ -71,12 +71,14 @@ class DisplayMode(str, Enum):
 
 def _get_stable_compute_device() -> str:
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-    
     if torch.cuda.is_available():
         return "cuda"
     if torch.backends.mps.is_available():
         logger.info("[LepauteConfig] Apple Silicon MPS detected. Engaging Metal Performance Shaders.")
         return "mps"
+    return "cpu"
+
+def _get_default_compute_device() -> str:
     return "cpu"
 
 class PerformanceMode(str, Enum):
@@ -115,7 +117,7 @@ def _load_dynamic_object_names() -> List[str]:
     return list(_load_dynamic_object_scales().keys())
     
 class LepauteConfig(BaseSettings):
-    device: str = Field(default_factory=_get_stable_compute_device)
+    device: str = Field(default_factory=_get_default_compute_device)
     data_store: str = "lepaute_data.db"
     
     performance_mode: PerformanceMode = PerformanceMode.MEDIUM
