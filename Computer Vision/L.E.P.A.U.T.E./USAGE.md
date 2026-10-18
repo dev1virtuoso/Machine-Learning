@@ -27,10 +27,17 @@ The resulting shared object (`liblepaute_core.so` / `.dylib` / `.dll`) is expect
 ### Standard Version (Python)
 
 ```bash
-# Recommended Python 3.10+
-pip install torch torchvision
-pip install opencv-python numpy pydantic pydantic-settings
-pip install albumentations ultralytics safetensors tqdm
+# Recommended Python 3.13+ (see .python-version)
+# Create and activate a uv-managed virtual environment
+uv venv
+source .venv/bin/activate          # Unix / macOS
+# .venv\Scripts\activate           # Windows
+
+# Install dependencies from the lockfile (preferred)
+uv sync
+
+# Alternative: install from requirements.txt
+# uv pip install -r requirements.txt
 ```
 
 Optional but recommended for accelerated tracking:
