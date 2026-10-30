@@ -2,13 +2,13 @@ albucore==0.0.24
 albumentations==2.0.8
 annotated-types==0.8.0
 anyio==4.15.1
-certifi==2026.7.22
+certifi==2026.10.18
 charset-normalizer==3.5.2
 cloudpickle==3.1.2
 contourpy==1.4.0
 cycler==0.12.1
 Farama-Notifications==0.0.6
-filelock==4.0.12
+filelock==4.2.1
 fonttools==4.66.1
 fsspec==2026.9.0
 gymnasium==1.4.0
@@ -28,7 +28,7 @@ nvidia-ml-py==13.615.71
 opencv-python==5.0.0.93
 opencv-python-headless==5.0.0.93
 packaging==26.3
-pillow==12.3.0
+pillow==13.0.0
 pluggy==1.6.0
 polars==1.44.2
 polars-runtime-32==1.44.2
